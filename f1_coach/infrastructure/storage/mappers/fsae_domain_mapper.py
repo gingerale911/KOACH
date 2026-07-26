@@ -21,24 +21,26 @@ from f1_coach.infrastructure.storage.orm.fsae_tables import (
 
 
 def vehicle_session_to_domain(orm: VehicleSessionORM) -> VehicleSession:
-    """Convert a VehicleSessionORM row to a VehicleSession."""
     return VehicleSession(
         name=orm.name,
         source_filename=orm.source_filename,
         raw_can_file=orm.raw_can_file,
         decoded_telemetry_file=orm.decoded_telemetry_file,
+        video_file=orm.video_file,                          
+        sync_offset_seconds=orm.sync_offset_seconds,        
         imported_at=orm.imported_at,
         id=orm.id,
     )
 
 
 def vehicle_session_to_orm(domain: VehicleSession) -> VehicleSessionORM:
-    """Convert a VehicleSession domain model to a VehicleSessionORM row."""
     kwargs: dict = dict(
         name=domain.name,
         source_filename=domain.source_filename,
         raw_can_file=domain.raw_can_file,
         decoded_telemetry_file=domain.decoded_telemetry_file,
+        video_file=domain.video_file,                     
+        sync_offset_seconds=domain.sync_offset_seconds,     
         imported_at=domain.imported_at,
     )
     if domain.is_persisted:

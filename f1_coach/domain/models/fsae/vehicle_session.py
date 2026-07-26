@@ -29,12 +29,19 @@ class VehicleSession:
                                 string until then.
         imported_at:            When this session was imported into KOACH.
         id:                     Database primary key; -1 means not yet persisted.
+        video_file:            Absolute path to the imported onboard camera video,
+                               empty until one is selected in Video & Senkron.
+        sync_offset_seconds:   telemetri_zamanı = video_zamanı + sync_offset_seconds.
+                               None until a sync point has been calculated.
+    
     """
 
     name: str
     source_filename: str
     raw_can_file: str
     decoded_telemetry_file: str = field(default="")
+    video_file: str = field(default="")                        
+    sync_offset_seconds: float | None = field(default=None)
     imported_at: datetime = field(default_factory=datetime.now)
     id: int = field(default=-1)
 

@@ -114,6 +114,7 @@ class FSAELabelingPage(QWidget):
         layout = QVBoxLayout(content)
 
         self._header_label = QLabel("Etiketleme")
+        self._header_label.setObjectName("PrimaryButton")
         self._header_label.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self._header_label)
 
@@ -435,13 +436,16 @@ class FSAELabelingPage(QWidget):
         self._session_repo.save(self._current_session)
 
         distinct_channels = len({p.channel_name for p in points})
-        self._status_label.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px;")
-        self._status_label.setText(f"✓ {len(points)} veri noktası, {distinct_channels} kanal çözümlendi.")
-        self._status_label.show()
 
         logger.info(
             "FSAE session çözümlendi: id=%d points=%d channels=%d",
             self._current_session.id, len(points), distinct_channels,
+        )
+
+        notify(
+            self, "Etiketleme Tamamlandı",
+            f"✓ {len(points)} veri noktası, {distinct_channels} kanal çözümlendi. "
+            "Bu session artık Video + Pist Takip uygulamasında kullanılabilir.",
         )
         self.decoding_completed.emit(self._current_session.id)
 

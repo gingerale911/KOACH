@@ -28,6 +28,8 @@ class VehicleSessionORM(Base):
     raw_can_file: Mapped[str] = mapped_column(String(512), nullable=False)
     decoded_telemetry_file: Mapped[str] = mapped_column(String(512), nullable=False, default="")
     imported_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    video_file: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    sync_offset_seconds: Mapped[float | None] = mapped_column(Float, nullable=True, default=None)
 
     mappings: Mapped[list["ChannelMappingORM"]] = relationship(
         "ChannelMappingORM",

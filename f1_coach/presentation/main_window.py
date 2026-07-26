@@ -36,12 +36,15 @@ from f1_coach.infrastructure.storage.repositories.f125.sqlite_lap_repository imp
     SQLiteLapRepository,
 )
 
-from f1_coach.presentation.fsae.fsae_chart_page import FSAEChartPage
+from f1_coach.presentation.fsae.fsae_playback_page import FSAEPlaybackPage
+from f1_coach.presentation.fsae.fsae_video_secondary_panel import FSAEVideoSecondaryPanel
+from f1_coach.presentation.fsae.fsae_video_session_picker_page import FSAEVideoSessionPickerPage
+from f1_coach.presentation.fsae.fsae_video_sync_page import FSAEVideoSyncPage
+
 from f1_coach.presentation.fsae.fsae_labeling_page import FSAELabelingPage
 from f1_coach.presentation.fsae.fsae_import_page import FSAEImportPage
 from f1_coach.presentation.fsae.fsae_landing_page import FSAELandingPage
 from f1_coach.presentation.fsae.fsae_secondary_panel import FSAESecondaryPanel
-
 
 from f1_coach.presentation.f125.f1_25_landing_page import F1_25LandingPage
 from f1_coach.presentation.f125.session_gecmisi_page import SessionGecmisiPage
@@ -128,7 +131,12 @@ class MainWindow(QMainWindow):
         self._fsae_secondary_panel = FSAESecondaryPanel()
         self._fsae_secondary_panel.import_clicked.connect(self._show_fsae_import)
         self._fsae_secondary_panel.labeling_clicked.connect(self._show_fsae_labeling)
-        self._fsae_secondary_panel.chart_clicked.connect(self._show_fsae_chart)
+
+        # --- Video Alanı ---
+        self._fsae_video_secondary_panel = FSAEVideoSecondaryPanel()
+        self._fsae_video_secondary_panel.session_select_clicked.connect(self._show_fsae_video_session_picker)
+        self._fsae_video_secondary_panel.video_sync_clicked.connect(self._show_fsae_video_sync)
+        self._fsae_video_secondary_panel.playback_clicked.connect(self._show_fsae_playback)
 
         # --- İçerik alanı ---
         self._content_stack = QStackedWidget()
@@ -138,6 +146,7 @@ class MainWindow(QMainWindow):
         right_layout.setSpacing(0)
         right_layout.addWidget(self._secondary_panel)
         right_layout.addWidget(self._fsae_secondary_panel)
+        right_layout.addWidget(self._fsae_video_secondary_panel)
         right_layout.addWidget(self._content_stack)
         root_layout.addWidget(right_column)
         
@@ -199,7 +208,8 @@ class MainWindow(QMainWindow):
         self._page_session_gecmisi = self._content_stack.addWidget(self._session_gecmisi_page)
 
         self._fsae_landing_page = FSAELandingPage()
-        self._fsae_landing_page.start_pressed.connect(self.on_fsae_start_pressed)
+        self._fsae_landing_page.labeling_pressed.connect(self.on_fsae_labeling_app_pressed)
+        self._fsae_landing_page.video_pressed.connect(self.on_fsae_video_app_pressed)
         self._page_fsae_landing = self._content_stack.addWidget(self._fsae_landing_page)
 
         self._fsae_import_page = FSAEImportPage(self._vehicle_session_repo)
@@ -210,10 +220,17 @@ class MainWindow(QMainWindow):
         self._fsae_labeling_page.decoding_completed.connect(self._on_fsae_decoding_completed)
         self._page_fsae_labeling = self._content_stack.addWidget(self._fsae_labeling_page)
 
-        self._fsae_chart_page = FSAEChartPage(self._vehicle_session_repo)
-        self._fsae_chart_page.session_finished.connect(self._on_fsae_session_finished)
-        self._page_fsae_chart = self._content_stack.addWidget(self._fsae_chart_page)
-        
+        self._fsae_video_session_picker_page = FSAEVideoSessionPickerPage(self._vehicle_session_repo)
+        self._fsae_video_session_picker_page.session_selected.connect(self._on_fsae_video_session_selected)
+        self._page_fsae_video_session_picker = self._content_stack.addWidget(self._fsae_video_session_picker_page)
+
+        self._fsae_video_sync_page = FSAEVideoSyncPage(self._vehicle_session_repo)
+        self._page_fsae_video_sync = self._content_stack.addWidget(self._fsae_video_sync_page)
+
+        self._fsae_playback_page = FSAEPlaybackPage(self._vehicle_session_repo)
+        self._fsae_playback_page.session_finished.connect(self._on_fsae_video_session_finished)
+        self._fsae_playback_page.sync_needed.connect(self._on_fsae_playback_sync_needed)
+        self._page_fsae_playback = self._content_stack.addWidget(self._fsae_playback_page)
 
         self._refresh_coaching_engine()
         self._refresh_profile_badge()
@@ -234,10 +251,9 @@ class MainWindow(QMainWindow):
     # Sayfa geçişleri
     # ------------------------------------------------------------------
     def _close_all_secondary_panels(self) -> None:
-        """Her iki modülün ikincil panelini kapatır — F125/FSAE arası geçişte
-        önceki modülün sekme çubuğunun görünür kalmasını engeller."""
         self._secondary_panel.close_panel()
         self._fsae_secondary_panel.close_panel()
+        self._fsae_video_secondary_panel.close_panel()
 
     def _show_ana_sayfa(self) -> None:
         self._close_all_secondary_panels()
@@ -281,8 +297,17 @@ class MainWindow(QMainWindow):
     def _show_fsae_labeling(self) -> None:
         self._content_stack.setCurrentIndex(self._page_fsae_labeling)
 
-    def _show_fsae_chart(self) -> None:
-        self._content_stack.setCurrentIndex(self._page_fsae_chart)
+    def _show_fsae_video_session_picker(self) -> None:
+        self._fsae_video_session_picker_page.refresh()
+        self._content_stack.setCurrentIndex(self._page_fsae_video_session_picker)
+
+    def _show_fsae_video_sync(self) -> None:
+        self._content_stack.setCurrentIndex(self._page_fsae_video_sync)
+
+    def _show_fsae_playback(self) -> None:
+        if self._active_fsae_session_id is not None:
+            self._fsae_playback_page.load_session(self._active_fsae_session_id)
+        self._content_stack.setCurrentIndex(self._page_fsae_playback)
 
     def _on_fsae_session_imported(self, session_id: int) -> None:
         self._active_fsae_session_id = session_id
@@ -290,26 +315,37 @@ class MainWindow(QMainWindow):
         self._show_fsae_labeling()
 
     def _on_fsae_decoding_completed(self, session_id: int) -> None:
+        """Etiketleme tamamlandığında (onay diyaloğu kapatıldıktan sonra)
+        çağrılır — FSAE Landing'e döner; Video + Pist Takip'e oradan geçilir."""
         self._active_fsae_session_id = session_id
-        self._fsae_chart_page.load_session(session_id)
-        self._show_fsae_chart()
+        self._show_fsae_landing()
 
-    def _on_fsae_session_finished(self) -> None:
-        """Grafik sayfasındaki 'Session'ı Bitir' butonuna basıldığında çağrılır."""
+    def _on_fsae_video_session_selected(self, session_id: int) -> None:
+        """Session Seç sayfasında bir session'a tıklanınca çağrılır."""
+        self._active_fsae_session_id = session_id
+        self._fsae_video_sync_page.load_session(session_id)
+        self._show_fsae_video_sync()
+
+    def _on_fsae_playback_sync_needed(self, session_id: int) -> None:
+        """Oynatım sayfasında 'Video & Senkron'a Git' butonuna basıldığında çağrılır."""
+        self._active_fsae_session_id = session_id
+        self._fsae_video_sync_page.load_session(session_id)
+        self._show_fsae_video_sync()
+
+    def _on_fsae_video_session_finished(self) -> None:
+        """Oynatım sayfasındaki 'Session'ı Bitir' butonuna basıldığında çağrılır."""
         self._active_fsae_session_id = None
         self._show_ana_sayfa()
 
-    def on_fsae_start_pressed(self) -> None:
-        """FSAE Landing sayfasındaki "Başla" butonu buraya bağlanır.
-
-        F1 25'in canlı UDP dinlemesinin aksine burada sürekli çalışan bir arka
-        plan süreci yok — FSAE akışı tamamen kullanıcı tetiklemeli, offline bir
-        dosya işleme sürecidir. Bu yüzden şimdilik F1 25'teki gibi bir
-        navigasyon kilidi uygulanmıyor; ileride uzun süren bir decode/import
-        işlemi eklenirse set_navigation_locked(True) burada devreye girebilir.
-        """
+    def on_fsae_labeling_app_pressed(self) -> None:
+        """FSAE Landing'deki 'CAN Veri Etiketleme' kartına basıldığında çağrılır."""
         self._fsae_secondary_panel.open_panel()
         self._show_fsae_import()
+
+    def on_fsae_video_app_pressed(self) -> None:
+        """FSAE Landing'deki 'Video + Pist Takip' kartına basıldığında çağrılır."""
+        self._fsae_video_secondary_panel.open_panel()
+        self._show_fsae_video_session_picker()
 
     def on_f1_25_start_pressed(self) -> None:
         """F1 25 Landing sayfasındaki "Başla" butonu buraya bağlanır.
@@ -338,25 +374,23 @@ class MainWindow(QMainWindow):
         self._content_stack.setCurrentIndex(self._page_lap_analizi)
 
     def _open_fsae_session_from_history(self, session_id: int) -> None:
-        """Ana Sayfa'daki 'Son FSAE Session'ları' listesinden bir karta tıklanınca
-        o session'ı açar. Etiketlenmiş olsun ya da olmasın, hem Etiketleme hem
-        Grafik sayfası bu session ile yüklenir — sekmeler arası geçiş yaptığında
-        ikisi de tutarlı kalsın diye (aksi halde ziyaret edilmeyen sekme önceki
-        açık session'ı göstermeye devam ediyordu)."""
+        """Ana Sayfa'daki 'Son FSAE Session'ları' listesinden bir karta
+        tıklanınca çağrılır. Etiketlenmemişse CAN Veri Etiketleme uygulamasında
+        Etiketleme sekmesine, etiketlenmişse Video + Pist Takip uygulamasında
+        Session Seç sekmesine yönlendirir."""
         session = self._vehicle_session_repo.get_by_id(session_id)
         if session is None:
             return
 
         self._active_fsae_session_id = session_id
         self._close_all_secondary_panels()
-        self._fsae_secondary_panel.open_panel()
-
-        self._fsae_labeling_page.load_session(session_id)
-        self._fsae_chart_page.load_session(session_id)
 
         if session.is_labeled:
-            self._show_fsae_chart()
+            self._fsae_video_secondary_panel.open_panel()
+            self._show_fsae_video_session_picker()
         else:
+            self._fsae_secondary_panel.open_panel()
+            self._fsae_labeling_page.load_session(session_id)
             self._show_fsae_labeling()
 
     def _refresh_coaching_engine(self) -> None:

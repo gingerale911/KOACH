@@ -30,6 +30,8 @@ class SQLiteVehicleSessionRepository:
                 orm.name = session.name
                 orm.source_filename = session.source_filename
                 orm.raw_can_file = session.raw_can_file
+                orm.video_file = session.video_file   
+                orm.sync_offset_seconds = session.sync_offset_seconds
                 orm.decoded_telemetry_file = session.decoded_telemetry_file
                 orm.imported_at = session.imported_at
             else:
