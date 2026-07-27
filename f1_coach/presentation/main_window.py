@@ -12,7 +12,7 @@ Başlangıç yönlendirmesi (UI dokümanı §2.6):
 """
 from pathlib import Path
 
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMainWindow, QStackedWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMainWindow, QStackedWidget, QVBoxLayout, QWidget, QApplication
 from PyQt6.QtGui import QIcon
 
 from f1_coach.domain.ports.profile_repository import ProfileRepository
@@ -423,3 +423,13 @@ class MainWindow(QMainWindow):
         profile = self._profile_repo.get_current()
         if profile is not None:
             self._sidebar.update_profile_badge(profile.name, profile.photo_path)
+
+    def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        """Pencere kapatılırken video oynatıcıları ve UDP alıcısını temiz
+        şekilde durdurur — aksi halde FFmpeg tabanlı multimedia backend'i
+        arkada bir kaynak bırakabiliyor, süreç konsoldan sonlanmıyor."""
+        self._fsae_video_sync_page.shutdown()
+        self._fsae_playback_page.shutdown()
+        self._telemetry_receiver.stop()
+        super().closeEvent(event)
+        QApplication.instance().quit()

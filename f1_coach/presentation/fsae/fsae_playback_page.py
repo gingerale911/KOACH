@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSlider,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -64,18 +65,7 @@ class FSAEPlaybackPage(QWidget):
         self._telemetry_df = None
         self._num_selected_channels = 0
 
-        outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        outer_layout.addWidget(scroll_area)
-
-        content = QWidget()
-        scroll_area.setWidget(content)
-
-        layout = QVBoxLayout(content)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
 
@@ -97,10 +87,18 @@ class FSAEPlaybackPage(QWidget):
         missing_layout.addWidget(self._go_to_sync_button)
         layout.addWidget(self._missing_sync_frame)
 
-        # --- Video ---
+        # --- Yatay bölünmüş alan: sol = video (sabit), sağ = kanal listesi + grafik (kaydırılabilir) ---
+        self._splitter = QSplitter(Qt.Orientation.Horizontal)
+        layout.addWidget(self._splitter, stretch=1)
+
+        # Sol taraf — video hiçbir zaman kaydırılmaz, her zaman görünür kalır
+        video_column = QWidget()
+        video_layout = QVBoxLayout(video_column)
+        video_layout.setContentsMargins(0, 0, 0, 0)
+
         self._video_widget = QVideoWidget()
-        self._video_widget.setMinimumHeight(360)
-        layout.addWidget(self._video_widget)
+        self._video_widget.setMinimumSize(360, 200)
+        video_layout.addWidget(self._video_widget, stretch=1)
 
         self._player = QMediaPlayer(self)
         self._audio_output = QAudioOutput(self)
@@ -111,6 +109,7 @@ class FSAEPlaybackPage(QWidget):
 
         transport_row = QHBoxLayout()
         self._play_pause_button = QPushButton("▶ Oynat")
+        self._play_pause_button.setObjectName("PrimaryButton")
         self._play_pause_button.clicked.connect(self._on_toggle_play)
         transport_row.addWidget(self._play_pause_button)
 
@@ -121,18 +120,31 @@ class FSAEPlaybackPage(QWidget):
         self._position_label = QLabel("0:00.000")
         self._position_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         transport_row.addWidget(self._position_label)
-        layout.addLayout(transport_row)
+        video_layout.addLayout(transport_row)
 
-        # --- Kanal listesi + grafik ---
-        chart_row = QHBoxLayout()
+        self._splitter.addWidget(video_column)
+
+        # Sağ taraf — kanal listesi (kendi scrollbar'ı) + grafik (dış QScrollArea ile kaydırılabilir)
+        right_column = QWidget()
+        right_layout = QHBoxLayout(right_column)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+
         self._channel_list = QListWidget()
-        self._channel_list.setMaximumWidth(220)
+        self._channel_list.setMaximumWidth(200)
         self._channel_list.itemChanged.connect(self._on_selection_changed)
-        chart_row.addWidget(self._channel_list)
+        right_layout.addWidget(self._channel_list)
 
+        chart_scroll = QScrollArea()
+        chart_scroll.setWidgetResizable(True)
+        chart_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._chart = PlotlyChartWidget()
-        chart_row.addWidget(self._chart, stretch=1)
-        layout.addLayout(chart_row, stretch=1)
+        chart_scroll.setWidget(self._chart)
+        right_layout.addWidget(chart_scroll, stretch=1)
+
+        self._splitter.addWidget(right_column)
+        self._splitter.setStretchFactor(0, 0)
+        self._splitter.setStretchFactor(1, 1)
+        self._splitter.setSizes([480, 800])
 
         self._finish_button = QPushButton("✓ Session'ı Bitir")
         self._finish_button.setObjectName("PrimaryButton")
@@ -152,11 +164,8 @@ class FSAEPlaybackPage(QWidget):
         )
 
         self._missing_sync_frame.setVisible(not ready)
-        for widget in (
-            self._video_widget, self._play_pause_button, self._position_slider,
-            self._position_label, self._channel_list, self._chart, self._finish_button,
-        ):
-            widget.setVisible(ready)
+        self._splitter.setVisible(ready)
+        self._finish_button.setVisible(ready)
 
         if not ready:
             self._current_session = session
@@ -250,3 +259,8 @@ class FSAEPlaybackPage(QWidget):
             self._telemetry_df, selected, cursor_x=current_telemetry_time, div_id=_DIV_ID
         )
         self._chart.render_html(html)
+
+    def shutdown(self) -> None:
+        """Uygulama kapanırken çağrılır — bkz. fsae_video_sync_page.shutdown()."""
+        self._player.stop()
+        self._player.setSource(QUrl())

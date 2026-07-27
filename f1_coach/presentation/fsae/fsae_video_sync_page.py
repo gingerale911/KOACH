@@ -117,6 +117,7 @@ class FSAEVideoSyncPage(QWidget):
 
         transport_row = QHBoxLayout()
         self._play_pause_button = QPushButton("▶ Oynat")
+        self._play_pause_button.setObjectName("PrimaryButton")
         self._play_pause_button.clicked.connect(self._on_toggle_play)
         transport_row.addWidget(self._play_pause_button)
 
@@ -144,6 +145,7 @@ class FSAEVideoSyncPage(QWidget):
 
         sync_row = QHBoxLayout()
         self._mark_video_button = QPushButton("Video Konumunu İşaretle")
+        self._mark_video_button.setObjectName("PrimaryButton")
         self._mark_video_button.clicked.connect(self._on_mark_video_position)
         sync_row.addWidget(self._mark_video_button)
 
@@ -344,3 +346,11 @@ class FSAEVideoSyncPage(QWidget):
         self._chart.setFixedHeight(compute_chart_height(len(selected)))
         html = build_multi_channel_html(self._telemetry_df, selected)
         self._chart.render_html(html)
+
+    def shutdown(self) -> None:
+        """Uygulama kapanırken çağrılır — oynatıcıyı durdurup kaynağı serbest
+        bırakır. FFmpeg tabanlı multimedia backend'i, pencere kapatılırken
+        oynatıcı hâlâ bir kaynağa bağlıysa arkada bir iş parçacığı/pencere
+        bırakabiliyor, bu da sürecin konsoldan sonlanmasını engelliyor."""
+        self._player.stop()
+        self._player.setSource(QUrl())

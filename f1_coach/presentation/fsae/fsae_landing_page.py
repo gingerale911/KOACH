@@ -1,23 +1,24 @@
-"""FSAE Landing sayfası — f125_landing_page.py'nin FSAE karşılığı.
+"""FSAE Landing sayfası — iki ayrı alt uygulamaya giriş noktası.
 
-Sol sidebar'daki FSAE logosuna her tıklamada gösterilir. Bu ekran
-açıldığında ikincil panel henüz açılmaz — yalnızca "Başla" butonuna
-basıldığında MainWindow.on_fsae_start_pressed() tetiklenir ve doğrudan
-İçe Aktar sekmesine yönlendirir (F1 25'teki gibi arka planda başlayan bir
-dinleyici yok; FSAE akışı tamamen kullanıcı tetiklemeli, offline bir
-dosya işleme sürecidir).
+FSAE modülü, birbirinden bağımsız iki akışa ayrılmış durumda:
+    1. CAN Veri Etiketleme — ham log içe aktarma + manuel kanal etiketleme
+    2. Video + Pist Takip — etiketlenmiş bir session'ı seçip video ile
+       senkronize inceleme
+
+Sol sidebar'daki FSAE logosuna her tıklamada gösterilir.
 """
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QFrame,
-    QGridLayout,
+    QHBoxLayout,
     QLabel,
+    QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
-    QScrollArea
 )
 
 from f1_coach.presentation import theme as theme_module
@@ -28,48 +29,67 @@ ICONS_DIR = CURRENT_DIR / "assets" / "icons"
 
 _FEATURE_CARDS = [
     ("can_logs.svg", "GREEN", "Ham CAN Log İçe Aktarma",
-     "Datalogger'dan USB ile alınan ham CAN log dosyasını (.blf/.asc/.trc/.csv) doğrudan içe aktar."),
+     "Datalogger'dan USB ile alınan ham CAN log dosyasını (.blf/.asc/.trc/.csv/.mf4) doğrudan içe aktarır. "
+     "Dosya python-can kütüphanesiyle okunur, içindeki her CAN ID ve örnek byte içeriği otomatik çıkarılıp "
+     "listelenir — hiçbir veri kaybı olmadan ham haliyle diske kaydedilir, çözümleme sonradan yapılır."),
     ("labeling.svg", "ORANGE", "Manuel Kanal Etiketleme",
-     "Her CAN ID içindeki sinyalleri kendi elinle etiketle — ölçek, offset ve birim tanımla, DBC dosyasına ihtiyaç yok."),
+     "Her CAN ID içindeki sinyalleri kendi elinle etiketlersin — byte aralığı, bit uzunluğu, endianness, ölçek "
+     "ve offset gibi bir DBC dosyasının normalde tanımladığı her şeyi arayüzden girersin. Bu, hangi takımın CAN "
+     "ağını nasıl tasarladığını bilmeden herhangi bir aracın verisini KOACH'a uyarlayabilmeni sağlar."),
     ("fsae_graph.svg", "BLUE", "Dinamik Kanal Grafikleri",
-     "Session'a göre değişen kanal setinden istediğin sinyalleri seçip zaman bazlı grafiklerde incele."),
+     "Etiketlenen kanallar session'dan session'a değişebileceği için grafik ekranı sabit bir panel yerine, "
+     "kanal listesinden seçtiğin herhangi bir kombinasyonu her biri kendi ölçeğinde ayrı bir satırda çizer — "
+     "tek bir düzende onlarca farklı sensör tipini (sıcaklık, basınç, hız, açı) yan yana karşılaştırabilirsin."),
     ("edit.svg", "PURPLE", "Düzeltilebilir Etiketleme",
-     "Yanlış etiketlediğin bir kanalı, dosyayı yeniden yüklemeden düzeltip anında yeniden çözümle."),
+     "Ham CAN frame'leri, çözümlenmiş veriden ayrı olarak diskte tutulur. Bir kanalı yanlış etiketlediğini fark "
+     "ettiğinde, orijinal log dosyasını yeniden yüklemene gerek kalmadan sadece etiketi düzeltip "
+     "'Kaydet ve Çözümle'ye basman yeterli — düzeltme anında tüm session için yeniden hesaplanır."),
+    ("video_sync.svg", "BLUE", "Video + Pist Takip (Senkronize İnceleme)",
+     "Etiketlenmiş bir session'ı araç üstü kamera görüntüsüyle birleştirir. Videoda ve telemetride aynı ana "
+     "(ör. kalkış anı) karşılık gelen noktaları elle işaretleyerek bir zaman ofseti hesaplarsın; Oynatım "
+     "ekranında video oynarken telemetri grafiğindeki imleç bu ofsete göre otomatik ilerler."),
 ]
 
+
 class _AppLauncherCard(QFrame):
-    """Tıklanabilir, büyük uygulama başlatma kartı."""
+    """Tıklanabilir, geniş uygulama başlatma kartı.
+
+    Sol tarafta başlık + açıklama (sola hizalı), sağ tarafta "Başla" butonu.
+    Hover'da yalnızca dış çerçeve accent renginde parlar — iç elemanların
+    (yazı, buton) rengi hover'dan bağımsız kalır.
+    """
 
     clicked = pyqtSignal()
 
-    def __init__(self, icon: str, title: str, description: str, accent_key: str) -> None:
+    def __init__(self, title: str, description: str, accent_key: str) -> None:
         super().__init__()
-        self.setObjectName("AppCard") 
-        
         self._accent_key = accent_key
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumHeight(160)
+        self.setObjectName("AppLauncherCard")
+        self.setMinimumHeight(96)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(10)
-        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(24, 18, 24, 18)
+        layout.setSpacing(16)
 
-        self._icon_box = QLabel(icon)
-        self._icon_box.setFixedSize(52, 52)
-        self._icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._icon_box, alignment=Qt.AlignmentFlag.AlignHCenter)
+        text_column = QVBoxLayout()
+        text_column.setSpacing(4)
 
         title_label = QLabel(title)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-weight: 700; font-size: 16px; background: transparent;")
-        layout.addWidget(title_label)
+        text_column.addWidget(title_label)
 
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px; background: transparent;")
-        layout.addWidget(desc_label)
+        text_column.addWidget(desc_label)
+
+        layout.addLayout(text_column, stretch=1)
+
+        self._start_button = QPushButton("Başla")
+        self._start_button.setObjectName("PrimaryButton")
+        self._start_button.clicked.connect(self.clicked.emit)
+        layout.addWidget(self._start_button, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.apply_theme()
 
@@ -80,12 +100,9 @@ class _AppLauncherCard(QFrame):
         }
         accent = color_map.get(self._accent_key, theme_module.ACCENT_RED)
         self.setStyleSheet(
-            f"#AppCard {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+            f"QFrame#AppLauncherCard {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
             "  border-radius: 16px; }"
-            f"#AppCard:hover {{ border: 1px solid {accent}; }}"
-        )
-        self._icon_box.setStyleSheet(
-            f"background-color: {theme_module.rgba(accent, 0.14)}; border-radius: 14px; font-size: 22px;"
+            f"QFrame#AppLauncherCard:hover {{ border: 1px solid {accent}; }}"
         )
 
     def mousePressEvent(self, event) -> None:  # type: ignore[no-untyped-def]
@@ -93,34 +110,41 @@ class _AppLauncherCard(QFrame):
         super().mousePressEvent(event)
 
 
-def _make_feature_card(icon: str, color: str, title: str, description: str) -> QFrame:
+def _make_feature_card(icon_filename: str, color: str, title: str, description: str) -> QFrame:
+    """Yatay bir kart: solda ikon, sağda başlık + uzun açıklama."""
     card = QFrame()
-    card.setObjectName("FeatureCard")
     card.setStyleSheet(
-        f"#FeatureCard {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+        f"QFrame#AppLauncherCard {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
         "  border-radius: 16px; padding: 18px; }"
     )
-    layout = QVBoxLayout(card)
+    layout = QHBoxLayout(card)
+    layout.setSpacing(16)
 
-    icon_box = QLabel(icon)
+    icon_box = QLabel()
     icon_box.setFixedSize(42, 42)
     icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
     icon_box.setStyleSheet(
-        f"background-color: {theme_module.rgba(color, 0.14)}; border-radius: 12px; font-size: 19px;"
+        f"background-color: {theme_module.rgba(color, 0.14)}; border-radius: 12px;"
     )
+    icon = QIcon(str(ICONS_DIR / icon_filename))
+    if not icon.isNull():
+        icon_box.setPixmap(icon.pixmap(22, 22))
     layout.addWidget(icon_box)
+
+    text_column = QVBoxLayout()
+    text_column.setSpacing(4)
 
     title_label = QLabel(title)
     title_label.setWordWrap(True)
-    title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title_label.setStyleSheet("font-weight: 600; font-size: 14px; background: transparent;")
-    layout.addWidget(title_label)
+    text_column.addWidget(title_label)
 
     desc_label = QLabel(description)
     desc_label.setWordWrap(True)
-    desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     desc_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px; background: transparent;")
-    layout.addWidget(desc_label)
+    text_column.addWidget(desc_label)
+
+    layout.addLayout(text_column, stretch=1)
 
     return card
 
@@ -129,8 +153,8 @@ class FSAELandingPage(QWidget):
     """FSAE karşılama ekranı — iki alt uygulamaya giriş noktası.
 
     Signals:
-        labeling_pressed: "CAN Veri Etiketleme" kartına basıldı.
-        video_pressed:    "Video + Pist Takip" kartına basıldı.
+        labeling_pressed: "CAN Veri Etiketleme" kartındaki "Başla"ya basıldı.
+        video_pressed:    "Video + Pist Takip" kartındaki "Başla"ya basıldı.
     """
 
     labeling_pressed = pyqtSignal()
@@ -168,7 +192,7 @@ class FSAELandingPage(QWidget):
 
         # --- İki uygulama kartı ---
         self._labeling_card = _AppLauncherCard(
-            "🏷", "CAN Veri Etiketleme",
+            "CAN Veri Etiketleme",
             "Ham CAN log dosyasını içe aktar, kanalları elle etiketle ve kaydet.",
             "ORANGE",
         )
@@ -176,7 +200,7 @@ class FSAELandingPage(QWidget):
         layout.addWidget(self._labeling_card)
 
         self._video_card = _AppLauncherCard(
-            "🎥", "Video + Pist Takip",
+            "Video + Pist Takip",
             "Etiketlenmiş bir session seç, video yükle, senkronize incele.",
             "BLUE",
         )
@@ -185,13 +209,14 @@ class FSAELandingPage(QWidget):
 
         layout.addSpacing(12)
 
-        # --- Bilgilendirici özellik kartları ---
+        # --- Bilgilendirici özellik kartları (dikey liste) ---
         self._grid_label = QLabel("MODÜL ÖZELLİKLERİ")
         self._grid_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         layout.addWidget(self._grid_label)
 
-        self._grid = QGridLayout()
-        layout.addLayout(self._grid)
+        self._features_column = QVBoxLayout()
+        self._features_column.setSpacing(12)
+        layout.addLayout(self._features_column)
 
         layout.addStretch(1)
 
@@ -202,8 +227,8 @@ class FSAELandingPage(QWidget):
         self._labeling_card.apply_theme()
         self._video_card.apply_theme()
 
-        while self._grid.count():
-            item = self._grid.takeAt(0)
+        while self._features_column.count():
+            item = self._features_column.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
@@ -211,7 +236,7 @@ class FSAELandingPage(QWidget):
             "GREEN": theme_module.GREEN, "BLUE": theme_module.BLUE,
             "ORANGE": theme_module.ORANGE, "PURPLE": theme_module.PURPLE,
         }
-        for index, (icon, color_key, card_title, desc) in enumerate(_FEATURE_CARDS):
-            row, col = divmod(index, 2)
-            self._grid.addWidget(
-                _make_feature_card(icon, color_map[color_key], card_title, desc), row, col)
+        for icon_filename, color_key, card_title, desc in _FEATURE_CARDS:
+            self._features_column.addWidget(
+                _make_feature_card(icon_filename, color_map[color_key], card_title, desc)
+            )

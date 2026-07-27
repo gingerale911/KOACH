@@ -30,16 +30,19 @@ class FSAEVideoSecondaryPanel(QWidget):
         layout.setSpacing(8)
 
         self._session_select_button = QPushButton("Session Seç")
+        self._session_select_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._session_select_button.setObjectName("PrimaryButton")
         self._session_select_button.clicked.connect(self.session_select_clicked.emit)
         layout.addWidget(self._session_select_button)
 
         self._video_sync_button = QPushButton("Video Senkron")
+        self._video_sync_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._video_sync_button.setObjectName("PrimaryButton")
         self._video_sync_button.clicked.connect(self.video_sync_clicked.emit)
         layout.addWidget(self._video_sync_button)
 
         self._playback_button = QPushButton("Oynatım")
+        self._playback_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._playback_button.setObjectName("PrimaryButton")
         self._playback_button.clicked.connect(self.playback_clicked.emit)
         layout.addWidget(self._playback_button)
