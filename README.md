@@ -6,16 +6,16 @@
 
 KOACH started as an F1 25 UDP telemetry coach and has grown into a two-module desktop application: real-time F1 25 telemetry capture with AI coaching, and offline Formula Student (FSAE) CAN log analysis with manual channel labeling. Both modules share the same local-first storage philosophy (SQLite + Parquet) and hexagonal architecture — entirely passive on the F1 25 side (zero interference with the game), entirely offline on the FSAE side (no cloud, no telemetry radio required).
 
-<img width="500"  alt="image" src="https://github.com/user-attachments/assets/e60bb0cd-d153-41af-b9cd-257eaaead684" />
-<img width="500"  alt="Ekran görüntüsü 2026-07-27 163829" src="https://github.com/user-attachments/assets/18305ade-2f3e-4c63-8d21-ae93bbc7a3a9" />
+<img width="1000"  alt="image" src="https://github.com/user-attachments/assets/e60bb0cd-d153-41af-b9cd-257eaaead684" />
+<img width="1000"  alt="Ekran görüntüsü 2026-07-27 163829" src="https://github.com/user-attachments/assets/18305ade-2f3e-4c63-8d21-ae93bbc7a3a9" />
 
 ---
 
 ## Modules
 
 ### F1 25
-<img width="500" alt="Ekran görüntüsü 2026-07-27 164225" src="https://github.com/user-attachments/assets/81b0135e-0aa3-4358-bb22-9ddb8d35ba0e" />
-<img width="500" alt="Ekran görüntüsü 2026-07-27 164239" src="https://github.com/user-attachments/assets/a0b3eddd-5541-4bf3-87cc-291da3c5a5d9" />
+<img width="1000" alt="Ekran görüntüsü 2026-07-27 164225" src="https://github.com/user-attachments/assets/81b0135e-0aa3-4358-bb22-9ddb8d35ba0e" />
+<img width="1000" alt="Ekran görüntüsü 2026-07-27 164239" src="https://github.com/user-attachments/assets/a0b3eddd-5541-4bf3-87cc-291da3c5a5d9" />
 
 - **Real-time UDP telemetry capture** — listens on port 20777 (configurable), parses official F1 25 packet structures via `ctypes`
 - **Interactive lap analysis** — Plotly-powered speed, throttle/brake overlay, and gear charts, aligned by track position (0.0–1.0) for accurate lap comparison
@@ -26,8 +26,8 @@ KOACH started as an F1 25 UDP telemetry coach and has grown into a two-module de
 - **Session history** — filterable by track, year, and weather, with one-click deletion
 
 ### FSAE (Formula Student)
-<img width="500"  alt="Ekran görüntüsü 2026-07-27 164301" src="https://github.com/user-attachments/assets/52e23e1f-ee29-47e2-8615-2af1b9faff20" />
-<img width="500"  alt="Ekran görüntüsü 2026-07-27 164248" src="https://github.com/user-attachments/assets/cb1599dd-45c9-46ab-994b-be9b4d31361d" />
+<img width="1000"  alt="Ekran görüntüsü 2026-07-27 164301" src="https://github.com/user-attachments/assets/52e23e1f-ee29-47e2-8615-2af1b9faff20" />
+<img width="1000"  alt="Ekran görüntüsü 2026-07-27 164248" src="https://github.com/user-attachments/assets/cb1599dd-45c9-46ab-994b-be9b4d31361d" />
 
 - **Offline CAN log import** — reads raw CAN logs (`.asc`, `.blf`, `.trc`, `.csv`, `.mf4`, ...) pulled via USB from the car's onboard datalogger after a run, via `python-can`
 - **Manual channel labeling** — no DBC file required. Every team wires its CAN IDs differently, so KOACH lets you label each signal yourself: byte range, bit length, endianness, signed/unsigned, scale, and offset — directly in the UI, with the found CAN IDs and sample bytes shown alongside for reference
