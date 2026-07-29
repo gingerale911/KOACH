@@ -24,7 +24,7 @@ import pandas as pd
 
 from f1_coach.domain.models.lap import Lap
 from f1_coach.infrastructure.logging.logger import get_logger
-from f1_coach.infrastructure.storage.parquet_writer import read_car_status, read_telemetry
+from f1_coach.infrastructure.storage.f125_parquet_writer import read_car_status, read_telemetry
 
 logger = get_logger(__name__)
 

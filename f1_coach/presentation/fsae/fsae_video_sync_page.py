@@ -14,10 +14,13 @@ Kullanıcı:
 Grafiğe tıklayarak otomatik doldurma (QWebChannel ile) ileride eklenecek
 bir iyileştirme — bkz. proje kararı, şimdilik elle giriş yeterli.
 
+Telemetri Parquet dosyasının okunması BackgroundWorker ile arka plan
+thread'inde yapılır — büyük dosyalarda bu işlem UI'ı bloklamasın diye
+(bkz. proje kararı).
+
 sync_offset_seconds şu ilişkiyi taşır:
     telemetri_zamanı = video_zamanı + sync_offset_seconds
-Oynatım sayfası (henüz yazılmadı) bu ofseti kullanarak videoyu telemetri
-imleciyle hizalayacak.
+Oynatım sayfası bu ofseti kullanarak videoyu telemetri imleciyle hizalar.
 """
 
 from pathlib import Path
@@ -42,6 +45,8 @@ from PyQt6.QtWidgets import (
 from f1_coach.domain.ports.fsae.vehicle_session_repository import VehicleSessionRepository
 from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.storage.fsae.parquet_writer import read_decoded_telemetry
+
+from f1_coach.presentation.background_worker import BackgroundWorker
 from f1_coach.presentation import theme as theme_module
 from f1_coach.presentation.charts.plotly_chart_widget import PlotlyChartWidget
 from f1_coach.presentation.confirm_dialog import notify
@@ -65,6 +70,7 @@ class FSAEVideoSyncPage(QWidget):
         self._current_session = None
         self._telemetry_df = None
         self._video_sync_seconds: float | None = None
+        self._worker: BackgroundWorker | None = None
 
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -175,7 +181,7 @@ class FSAEVideoSyncPage(QWidget):
         layout.addWidget(self._sync_status_label)
 
         # --- Referans için telemetri grafiği ---
-        self._chart_label = QLabel("TELEMETRİ (referans için — fareyle gezinip zamanı oku)")
+        self._chart_label = QLabel("TELEMETRİ (senkron noktasını bulmak için grafiğe tıkla)")
         self._chart_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._chart_label.hide()
         layout.addWidget(self._chart_label)
@@ -187,6 +193,7 @@ class FSAEVideoSyncPage(QWidget):
         chart_row.addWidget(self._channel_list)
 
         self._chart = PlotlyChartWidget()
+        self._chart.chart_clicked.connect(self._on_chart_point_clicked)
         chart_row.addWidget(self._chart, stretch=1)
 
         self._chart_row_frame = QFrame()
@@ -207,11 +214,23 @@ class FSAEVideoSyncPage(QWidget):
             return
 
         self._current_session = session
-        self._header_label.setText(f"Video & Senkron — {session.name}")
-        self._telemetry_df = read_decoded_telemetry(session.decoded_telemetry_file)
+        self._telemetry_df = None
         self._video_sync_seconds = None
         self._video_sync_value_label.setText("Video zamanı: —")
         self._sync_status_label.setText("")
+
+        self._header_label.setText(f"Video & Senkron — {session.name} (telemetri yükleniyor...)")
+        self._set_empty_state(False)
+        self._set_loaded_content_enabled(False)
+
+        self._worker = BackgroundWorker(read_decoded_telemetry, session.decoded_telemetry_file)
+        self._worker.finished.connect(self._on_telemetry_loaded)
+        self._worker.failed.connect(self._on_telemetry_load_failed)
+        self._worker.start()
+
+    def _on_telemetry_loaded(self, df) -> None:
+        self._telemetry_df = df
+        self._header_label.setText(f"Video & Senkron — {self._current_session.name}")
 
         channels = sorted(self._telemetry_df["channel_name"].unique())
         self._channel_list.blockSignals(True)
@@ -223,15 +242,20 @@ class FSAEVideoSyncPage(QWidget):
             self._channel_list.addItem(item)
         self._channel_list.blockSignals(False)
 
-        if session.video_file and Path(session.video_file).exists():
-            self._load_video(session.video_file)
+        if self._current_session.video_file and Path(self._current_session.video_file).exists():
+            self._load_video(self._current_session.video_file)
         else:
             self._video_file_label.setText("Henüz video seçilmedi")
             self._video_widget.hide()
             self._transport_row_frame.hide()
 
-        self._set_empty_state(False)
+        self._set_loaded_content_enabled(True)
         self._render_chart()
+
+    def _on_telemetry_load_failed(self, exc: Exception) -> None:
+        logger.error("FSAE telemetri verisi yüklenemedi: %s", exc)
+        notify(self, "Yükleme hatası", f"Telemetri verisi okunamadı: {exc}")
+        self._set_empty_state(True)
 
     def _set_empty_state(self, empty: bool) -> None:
         self._empty_label.setVisible(empty)
@@ -243,6 +267,18 @@ class FSAEVideoSyncPage(QWidget):
         if empty:
             self._video_widget.hide()
             self._transport_row_frame.hide()
+
+    def _set_loaded_content_enabled(self, enabled: bool) -> None:
+        """Telemetri yüklenene kadar etkileşimli alanları kilitler.
+
+        Widget'lar gizlenmiyor, yalnızca devre dışı bırakılıyor — sayfa
+        "orada duruyor ama şu an kilitli" hissi versin diye (bkz. proje
+        kararı: Etiketleme sayfasındaki aynı desen)."""
+        for widget in (
+            self._video_file_row_frame, self._sync_row_frame,
+            self._chart_label, self._chart_row_frame,
+        ):
+            widget.setEnabled(enabled)
 
     # ------------------------------------------------------------------
     # Video
@@ -344,7 +380,7 @@ class FSAEVideoSyncPage(QWidget):
             self._chart.render_html("<html><body></body></html>")
             return
         self._chart.setFixedHeight(compute_chart_height(len(selected)))
-        html = build_multi_channel_html(self._telemetry_df, selected)
+        html = build_multi_channel_html(self._telemetry_df, selected, enable_click_to_select=True)
         self._chart.render_html(html)
 
     def shutdown(self) -> None:
@@ -354,3 +390,11 @@ class FSAEVideoSyncPage(QWidget):
         bırakabiliyor, bu da sürecin konsoldan sonlanmasını engelliyor."""
         self._player.stop()
         self._player.setSource(QUrl())
+
+    def _on_chart_point_clicked(self, x_value: float) -> None:
+        """Grafikte bir noktaya tıklanınca, o noktanın x (zaman) değerini
+        doğrudan telemetri zamanı kutusuna yazar — elle okuma/yazmaya gerek
+        kalmaz."""
+        self._telemetry_sync_input.setValue(x_value)
+        self._sync_status_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
+        self._sync_status_label.setText(f"Grafikten seçildi: telemetri zamanı = {x_value:.3f} s")

@@ -1,8 +1,20 @@
 """QWebEngineView tabanlı, Plotly HTML'i render eden basit widget."""
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
+
+
+class _ChartBridge(QObject):
+    """JavaScript'ten Python'a veri aktarmak için QWebChannel köprüsü."""
+    
+    clicked = pyqtSignal(float)
+
+    @pyqtSlot(float)
+    def on_chart_clicked(self, x_value: float) -> None:
+        """JS tarafında window.pyBridge.on_chart_clicked çağrıldığında tetiklenir."""
+        self.clicked.emit(x_value)
 
 
 class PlotlyChartWidget(QWidget):
@@ -11,6 +23,8 @@ class PlotlyChartWidget(QWidget):
     Signals:
         chart_ready: Yüklenen HTML sayfası (Plotly.js dahil) tamamen
                     yüklendiğinde yayınlanır.
+        chart_clicked: Grafikte bir veri noktasına tıklandığında (x ekseni
+                       değeriyle birlikte) yayınlanır.
 
     run_javascript(), sayfa henüz yüklenmeyi bitirmeden (chart_ready
     yayınlanmadan) çağrılırsa sessizce yok sayılır — "Plotly is not
@@ -20,15 +34,27 @@ class PlotlyChartWidget(QWidget):
     """
 
     chart_ready = pyqtSignal()
+    chart_clicked = pyqtSignal(float)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        
         self._view = QWebEngineView()
         self._is_ready = False
         self._view.loadFinished.connect(self._on_load_finished)
         layout.addWidget(self._view)
+
+        # --- QWebChannel ve Köprü Kurulumu ---
+        self._bridge = _ChartBridge(self)
+        self._bridge.clicked.connect(self.chart_clicked.emit)
+
+        self._channel = QWebChannel(self)
+        # JS tarafındaki "window.pyBridge = channel.objects.bridge" satırı 
+        # buradaki "bridge" ismine karşılık gelir.
+        self._channel.registerObject("bridge", self._bridge)
+        self._view.page().setWebChannel(self._channel)
 
     def render_html(self, html: str) -> None:
         """Yeni bir HTML sayfası yükler — bu, tam bir sayfa yenilemesi

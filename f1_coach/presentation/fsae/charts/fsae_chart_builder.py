@@ -41,6 +41,7 @@ def build_multi_channel_html(
     selected_channels: list[str],
     cursor_x: float | None = None,
     div_id: str = _DEFAULT_DIV_ID,
+    enable_click_to_select: bool = False,
 ) -> str:
     """Seçilen her kanalı kendi satırında, kendi ölçeğinde çizen grafik üretir.
 
@@ -96,7 +97,10 @@ def build_multi_channel_html(
         margin=dict(l=50, r=20, t=30, b=40), template="plotly_dark",
         shapes=shapes,
     )
-    return _strip_internal_scroll(fig.to_html(include_plotlyjs="cdn", full_html=True, div_id=div_id))
+    html = _strip_internal_scroll(fig.to_html(include_plotlyjs="cdn", full_html=True, div_id=div_id))
+    if enable_click_to_select:
+        html = _inject_click_handler(html, div_id)
+    return html
 
 
 def build_cursor_update_js(num_channels: int, x_value: float, div_id: str = _DEFAULT_DIV_ID) -> str:
@@ -111,3 +115,32 @@ def build_cursor_update_js(num_channels: int, x_value: float, div_id: str = _DEF
         updates[f"shapes[{i}].x0"] = x_value
         updates[f"shapes[{i}].x1"] = x_value
     return f"Plotly.relayout(document.getElementById('{div_id}'), {json.dumps(updates)});"
+
+def _inject_click_handler(html: str, div_id: str) -> str:
+    """Grafiğe QWebChannel üzerinden tıklama dinleyicisi ekler.
+
+    plotly_click olayını yakalayıp tıklanan noktanın x değerini
+    PlotlyChartWidget'taki _ChartBridge.on_chart_clicked'e iletir. Sayfa
+    her yeniden yüklendiğinde (render_html çağrıldığında) bu script de
+    yeniden çalışır — QWebChannel bağlantısını her seferinde tazeler.
+    """
+    script = f"""
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script>
+window.addEventListener('load', function() {{
+    if (typeof QWebChannel === 'undefined' || typeof qt === 'undefined') return;
+    new QWebChannel(qt.webChannelTransport, function(channel) {{
+        window.pyBridge = channel.objects.bridge;
+        var chartDiv = document.getElementById('{div_id}');
+        if (chartDiv) {{
+            chartDiv.on('plotly_click', function(data) {{
+                if (data.points && data.points.length > 0) {{
+                    window.pyBridge.on_chart_clicked(data.points[0].x);
+                }}
+            }});
+        }}
+    }});
+}});
+</script>
+"""
+    return html.replace("</body>", f"{script}</body>", 1)

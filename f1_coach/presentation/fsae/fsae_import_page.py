@@ -33,6 +33,7 @@ from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.storage.fsae.parquet_writer import write_raw_can_frames
 from f1_coach.presentation import theme as theme_module
 from f1_coach.presentation.theme_manager import ThemeManager
+from f1_coach.presentation.background_worker import BackgroundWorker
 
 logger = get_logger(__name__)
 
@@ -159,32 +160,32 @@ class FSAEImportPage(QWidget):
         if not self._selected_file_path:
             return
 
-        name = self._name_input.text().strip() or Path(self._selected_file_path).stem
+        self._pending_session_name = self._name_input.text().strip() or Path(self._selected_file_path).stem
 
         self._status_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
-        self._status_label.setText("Dosya okunuyor...")
+        self._status_label.setText("Dosya okunuyor... (büyük dosyalarda birkaç saniye sürebilir)")
         self._status_label.show()
         self._result_card.hide()
         self._import_button.setEnabled(False)
-        self.repaint()  # senkron işlem öncesi durum mesajını hemen göster
+        self._select_file_button.setEnabled(False)
 
-        try:
-            frames = self._can_reader.read_frames(self._selected_file_path)
-        except ValueError as exc:
-            logger.error("CAN log okunamadı: %s", exc)
-            self._show_error(f"Dosya okunamadı: {exc}")
-            return
+        self._worker = BackgroundWorker(self._read_and_write_can_data, self._selected_file_path)
+        self._worker.finished.connect(self._on_import_worker_finished)
+        self._worker.failed.connect(self._on_import_worker_failed)
+        self._worker.start()
 
+    def _read_and_write_can_data(self, file_path: str):
+        """Arka plan thread'inde çalışır — hiçbir widget'a dokunmaz."""
+        frames = self._can_reader.read_frames(file_path)
         session_identifier = uuid.uuid4().hex
-        try:
-            raw_can_file = write_raw_can_frames(session_identifier, frames)
-        except ValueError as exc:
-            logger.error("Ham CAN frame'leri yazılamadı: %s", exc)
-            self._show_error(f"Veri diske yazılamadı: {exc}")
-            return
+        raw_can_file = write_raw_can_frames(session_identifier, frames)
+        return frames, raw_can_file
+
+    def _on_import_worker_finished(self, result) -> None:
+        frames, raw_can_file = result
 
         session = VehicleSession(
-            name=name,
+            name=self._pending_session_name,
             source_filename=Path(self._selected_file_path).name,
             raw_can_file=raw_can_file,
         )
@@ -199,12 +200,18 @@ class FSAEImportPage(QWidget):
         )
         self._result_card.show()
         self._import_button.setEnabled(True)
+        self._select_file_button.setEnabled(True)
 
         self._last_imported_session_id = session.id
         logger.info(
             "FSAE session içe aktarıldı: id=%d name=%s frames=%d distinct_ids=%d",
             session.id, session.name, len(frames), distinct_ids,
         )
+
+    def _on_import_worker_failed(self, exc: Exception) -> None:
+        logger.error("CAN log içe aktarımı başarısız: %s", exc)
+        self._show_error(f"İşlem başarısız: {exc}")
+        self._select_file_button.setEnabled(True)
 
     def _show_error(self, message: str) -> None:
         self._status_label.setStyleSheet(f"color: {theme_module.ACCENT_RED}; font-size: 12px;")

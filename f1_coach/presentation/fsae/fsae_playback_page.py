@@ -7,6 +7,9 @@ eder (build_cursor_update_js ile, tüm grafiği yeniden çizmeden).
 Bu sayfa yalnızca hem video_file hem sync_offset_seconds ayarlanmış
 session'lar için kullanılabilir — eksikse kullanıcıyı Video & Senkron
 sekmesine yönlendiren bir uyarı gösterir.
+
+Telemetri Parquet dosyasının okunması BackgroundWorker ile arka plan
+thread'inde yapılır — büyük dosyalarda bu işlem UI'ı bloklamasın diye.
 """
 
 from pathlib import Path
@@ -29,14 +32,19 @@ from PyQt6.QtWidgets import (
 )
 
 from f1_coach.domain.ports.fsae.vehicle_session_repository import VehicleSessionRepository
+from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.storage.fsae.parquet_writer import read_decoded_telemetry
 from f1_coach.presentation import theme as theme_module
+from f1_coach.presentation.background_worker import BackgroundWorker
 from f1_coach.presentation.charts.plotly_chart_widget import PlotlyChartWidget
+from f1_coach.presentation.confirm_dialog import notify
 from f1_coach.presentation.fsae.charts.fsae_chart_builder import (
     build_cursor_update_js,
     build_multi_channel_html,
     compute_chart_height,
 )
+
+logger = get_logger(__name__)
 
 _DIV_ID = "fsae_playback_chart"
 
@@ -64,6 +72,7 @@ class FSAEPlaybackPage(QWidget):
         self._current_session = None
         self._telemetry_df = None
         self._num_selected_channels = 0
+        self._worker: BackgroundWorker | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(32, 24, 32, 24)
@@ -167,13 +176,22 @@ class FSAEPlaybackPage(QWidget):
         self._splitter.setVisible(ready)
         self._finish_button.setVisible(ready)
 
+        self._current_session = session
         if not ready:
-            self._current_session = session
             return
 
-        self._current_session = session
-        self._header_label.setText(f"Oynatım — {session.name}")
-        self._telemetry_df = read_decoded_telemetry(session.decoded_telemetry_file)
+        self._telemetry_df = None
+        self._header_label.setText(f"Oynatım — {session.name} (telemetri yükleniyor...)")
+        self._splitter.setEnabled(False)
+
+        self._worker = BackgroundWorker(read_decoded_telemetry, session.decoded_telemetry_file)
+        self._worker.finished.connect(self._on_telemetry_loaded)
+        self._worker.failed.connect(self._on_telemetry_load_failed)
+        self._worker.start()
+
+    def _on_telemetry_loaded(self, df) -> None:
+        self._telemetry_df = df
+        self._header_label.setText(f"Oynatım — {self._current_session.name}")
 
         channels = sorted(self._telemetry_df["channel_name"].unique())
         self._channel_list.blockSignals(True)
@@ -185,8 +203,16 @@ class FSAEPlaybackPage(QWidget):
             self._channel_list.addItem(item)
         self._channel_list.blockSignals(False)
 
-        self._player.setSource(QUrl.fromLocalFile(session.video_file))
+        self._player.setSource(QUrl.fromLocalFile(self._current_session.video_file))
+        self._splitter.setEnabled(True)
         self._render_chart()
+
+    def _on_telemetry_load_failed(self, exc: Exception) -> None:
+        logger.error("FSAE telemetri verisi yüklenemedi: %s", exc)
+        notify(self, "Yükleme hatası", f"Telemetri verisi okunamadı: {exc}")
+        self._missing_sync_frame.setVisible(True)
+        self._splitter.setVisible(False)
+        self._finish_button.setVisible(False)
 
     def _on_go_to_sync(self) -> None:
         if self._current_session is not None:

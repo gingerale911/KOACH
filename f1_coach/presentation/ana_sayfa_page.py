@@ -43,15 +43,6 @@ logger = get_logger(__name__)
 CURRENT_DIR = Path(__file__).resolve().parent
 ICONS_DIR = CURRENT_DIR / "assets" / "icons"
 
-_FEATURES = [
-    ("udp.svg",  theme_module.GREEN, "UDP Telemetrisi",
-     "F1 25 oyunundan gerçek zamanlı telemetri verisini UDP üzerinden yakala ve kaydet."),
-    ("no-disturb.svg",  theme_module.PURPLE, "Oyuna Müdahale Yok",
-     "Tamamen pasif dinleme — oyun verilerine yalnızca okuma erişimi, hiçbir mod veya enjeksiyon yok."),
-    ("ai.svg",  theme_module.ORANGE, "Session Sonrası AI Analiz",
-     "Sürüşünü yüklediğin AI modeline analiz ettir, kişiselleştirilmiş geri bildirim al."),
-]
-
 _MAX_RECENT_SESSIONS = 5
 
 
@@ -256,10 +247,6 @@ class AnaSayfaPage(QWidget):
         self._greeting_label.setStyleSheet("font-size: 24px; font-weight: 700;")
         self._layout.addWidget(self._greeting_label)
 
-        subtitle = QLabel("Sürüşünü analiz et, her turda daha iyi ol.")
-        subtitle.setStyleSheet(f"color: { theme_module.TEXT_SECONDARY}; font-size: 13px;")
-        self._layout.addWidget(subtitle)
-
         # --- AI yapılandırma banner'ı ---
         self._ai_banner = WarningBanner(
             "AI koçluk analizi için henüz bir sağlayıcı yapılandırılmadı.",
@@ -271,9 +258,6 @@ class AnaSayfaPage(QWidget):
         self._features_row = QHBoxLayout()
         self._features_row.setSpacing(14)
         self._layout.addLayout(self._features_row)
-        self._rebuild_feature_cards()
-
-        ThemeManager.instance().theme_changed.connect(self._rebuild_feature_cards)
 
         # --- Son session'lar ---
         self.f125_sessions_header = QLabel("SON F1 25 SESSION'LARI")
@@ -299,16 +283,6 @@ class AnaSayfaPage(QWidget):
         self._layout.addStretch(1)
         ThemeManager.instance().theme_changed.connect(self.refresh)
         self.refresh()
-
-    def _rebuild_feature_cards(self) -> None:
-        """Kartları temadan bağımsız yeniden inşa eder — renk import anında
-        değil, bu metod her çağrıldığında theme modülünden okunur."""
-        while self._features_row.count():
-            item = self._features_row.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        for icon, color, title, desc in _FEATURES:
-            self._features_row.addWidget(_make_feature_card(icon, color, title, desc))
 
     def refresh(self) -> None:
         """Sidebar'dan Ana Sayfa'ya her dönüşte çağrılır — güncel veriyi çeker."""

@@ -49,7 +49,7 @@ from f1_coach.infrastructure.storage.fsae.parquet_writer import (
     write_decoded_telemetry,
 )
 
-
+from f1_coach.presentation.background_worker import BackgroundWorker
 from f1_coach.presentation.confirm_dialog import notify
 from f1_coach.presentation.fsae.profile_picker_dialog import pick_profile
 from f1_coach.presentation.text_prompt_dialog import prompt_text
@@ -279,25 +279,44 @@ class FSAELabelingPage(QWidget):
             return
 
         self._current_session = session
-        self._header_label.setText(f"Etiketleme — {session.name}")
+        self._header_label.setText(f"Etiketleme — {session.name} (yükleniyor...)")
+        self._empty_label.hide()
+        for widget in (
+            self._ids_label, self._ids_table, self._profile_section_label, self._profile_row_frame,
+            self._form_label, self._form_frame, self._mappings_label, self._mappings_table,
+            self._remove_mapping_button, self._decode_button,
+        ):
+            widget.setEnabled(False)
+            widget.show()
+        self._status_label.hide()
 
-        self._raw_frames_df = read_raw_can_frames(session.raw_can_file)
+        self._worker = BackgroundWorker(read_raw_can_frames, session.raw_can_file)
+        self._worker.finished.connect(self._on_raw_frames_loaded)
+        self._worker.failed.connect(self._on_raw_frames_load_failed)
+        self._worker.start()
+
+    def _on_raw_frames_loaded(self, df) -> None:
+        self._raw_frames_df = df
         self._populate_ids_table()
 
-        self._mappings = self._mapping_repo.get_by_session(session.id)
+        self._mappings = self._mapping_repo.get_by_session(self._current_session.id)
         self._refresh_mappings_table()
 
         self._last_profile_load_mappings = []
         self._undo_profile_load_button.hide()
 
-        self._empty_label.hide()
+        self._header_label.setText(f"Etiketleme — {self._current_session.name}")
         for widget in (
-            self._ids_label, self._ids_table, self._form_label, self._form_frame,
-            self._mappings_label, self._mappings_table, self._remove_mapping_button,
-            self._decode_button, self._profile_section_label, self._profile_row_frame
+            self._ids_label, self._ids_table, self._profile_section_label, self._profile_row_frame,
+            self._form_label, self._form_frame, self._mappings_label, self._mappings_table,
+            self._remove_mapping_button, self._decode_button,
         ):
-            widget.show()
-        self._status_label.hide()
+            widget.setEnabled(True)
+
+    def _on_raw_frames_load_failed(self, exc: Exception) -> None:
+        logger.error("Ham CAN verisi yüklenemedi: %s", exc)
+        notify(self, "Yükleme hatası", f"Ham CAN verisi okunamadı: {exc}")
+        self._show_empty_state()
 
     def _show_empty_state(self) -> None:
         self._current_session = None

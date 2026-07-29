@@ -165,7 +165,7 @@ class AyarlarPage(QWidget):
         telemetry_content.addWidget(self._udp_port_input)
         self._udp_port_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        port_note = QLabel("F1 25 oyunundaki UDP portu ile eşleşmeli. Varsayılan: 20777")
+        port_note = QLabel("Telemetri alanacak oyundaki UDP portu ile eşleşmeli. \nF1 25 : 20777 \nAsetto Corsa FSAE Mod : 9996 ")
         port_note.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; background: transparent;")
         telemetry_content.addWidget(port_note)
 
