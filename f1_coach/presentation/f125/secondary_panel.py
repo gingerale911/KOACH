@@ -35,14 +35,20 @@ class SecondaryPanel(QWidget):
         layout.setSpacing(8)
 
         self._live_session_button = QPushButton("Canlı Session")
+        self._live_session_button.setObjectName("PrimaryButton")
+        self._live_session_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._live_session_button.clicked.connect(self.live_session_clicked.emit)
         layout.addWidget(self._live_session_button)
 
         self._lap_analysis_button = QPushButton("Lap Analizi")
+        self._lap_analysis_button.setObjectName("PrimaryButton")
+        self._lap_analysis_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._lap_analysis_button.clicked.connect(self.lap_analysis_clicked.emit)
         layout.addWidget(self._lap_analysis_button)
 
         self._session_history_button = QPushButton("Session Geçmişi")
+        self._session_history_button.setObjectName("PrimaryButton")
+        self._session_history_button.setStyleSheet("font-size: 12px; padding: 5px 12px;")
         self._session_history_button.clicked.connect(self.session_history_clicked.emit)
         layout.addWidget(self._session_history_button)
 

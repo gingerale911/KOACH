@@ -331,6 +331,21 @@ def build_global_stylesheet(base_font_size: int = 13) -> str:
         QCheckBox::indicator:hover {{
             border-color: {BORDER_HOVER};
         }}
+        QRadioButton::indicator {{
+            width: 16px;
+            height: 16px;
+            border: 1px solid {BORDER_INPUT};
+            border-radius: 8px;
+            background-color: {SURFACE};
+        }}
+        QRadioButton::indicator:checked {{
+            background-color: {ACCENT_RED};
+            border: 4px solid {SURFACE};
+            outline: 1px solid {ACCENT_RED};
+        }}
+        QRadioButton::indicator:hover {{
+            border-color: {BORDER_HOVER};
+        }}
         QListView::indicator {{
             width: 16px;
             height: 16px;
