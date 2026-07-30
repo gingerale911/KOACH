@@ -136,7 +136,7 @@ class FSAEChartPage(QWidget):
         self._set_empty_state(False)
         self._maybe_show_maximize_hint()
         self._render_chart()
-
+        
     def _maybe_show_maximize_hint(self) -> None:
         window = self.window()
         already_large_enough = window.isMaximized() or window.width() >= _MAXIMIZE_HINT_THRESHOLD_WIDTH

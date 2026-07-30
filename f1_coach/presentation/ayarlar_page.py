@@ -7,15 +7,17 @@ yayınlanır — MainWindow bunu dinleyip CoachingEngine'i yeniden kurar.
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
-    QSlider,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QRadioButton,
     QScrollArea,
+    QSlider,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -159,13 +161,29 @@ class AyarlarPage(QWidget):
         layout.addWidget(telemetry_card)
 
         telemetry_content.addWidget(QLabel("UDP Port"))
+
+        preset_row = QHBoxLayout()
+        self._f125_preset_radio = QRadioButton("F1 25 (20777)")
+        self._ac_preset_radio = QRadioButton("AC FSAE (9996)")
+        self._port_preset_group = QButtonGroup(self)
+        self._port_preset_group.addButton(self._f125_preset_radio)
+        self._port_preset_group.addButton(self._ac_preset_radio)
+        self._f125_preset_radio.toggled.connect(self._on_f125_preset_selected)
+        self._ac_preset_radio.toggled.connect(self._on_ac_preset_selected)
+        preset_row.addWidget(self._f125_preset_radio)
+        preset_row.addWidget(self._ac_preset_radio)
+        preset_row.addStretch(1)
+        telemetry_content.addLayout(preset_row)
+
         self._udp_port_input = _NoScrollSpinBox()
         self._udp_port_input.setRange(1024, 65535)
         self._udp_port_input.setValue(20777)
         telemetry_content.addWidget(self._udp_port_input)
         self._udp_port_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        port_note = QLabel("Telemetri alanacak oyundaki UDP portu ile eşleşmeli. \nF1 25 : 20777 \nAsetto Corsa FSAE Mod : 9996 ")
+        port_note = QLabel(
+            "Yukarıdaki butonlar alanı hızlıca doldurur — istersen elle farklı bir port da girebilirsin."
+        )
         port_note.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; background: transparent;")
         telemetry_content.addWidget(port_note)
 
@@ -238,6 +256,20 @@ class AyarlarPage(QWidget):
 
         self._udp_port_input.setValue(profile.udp_port)
 
+        self._f125_preset_radio.blockSignals(True)
+        self._ac_preset_radio.blockSignals(True)
+        if profile.udp_port == 20777:
+            self._f125_preset_radio.setChecked(True)
+        elif profile.udp_port == 9996:
+            self._ac_preset_radio.setChecked(True)
+        else:
+            self._port_preset_group.setExclusive(False)
+            self._f125_preset_radio.setChecked(False)
+            self._ac_preset_radio.setChecked(False)
+            self._port_preset_group.setExclusive(True)
+        self._f125_preset_radio.blockSignals(False)
+        self._ac_preset_radio.blockSignals(False)
+
         theme_index = self._theme_combo.findData(profile.theme)
         self._scale_slider.setValue(round(profile.ui_scale * 100))
         self._theme_combo.setCurrentIndex(theme_index if theme_index >= 0 else 0)
@@ -251,6 +283,14 @@ class AyarlarPage(QWidget):
 
     def _on_scale_preview(self, value: int) -> None:
         self._scale_label.setText(f"{value}%")
+
+    def _on_f125_preset_selected(self, checked: bool) -> None:
+        if checked:
+            self._udp_port_input.setValue(20777)
+
+    def _on_ac_preset_selected(self, checked: bool) -> None:
+        if checked:
+            self._udp_port_input.setValue(9996)
 
     def _load_api_key_for_current_provider(self) -> None:
         provider = self._provider_combo.currentData()

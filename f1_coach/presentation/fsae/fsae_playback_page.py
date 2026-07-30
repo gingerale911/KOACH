@@ -290,3 +290,11 @@ class FSAEPlaybackPage(QWidget):
         """Uygulama kapanırken çağrılır — bkz. fsae_video_sync_page.shutdown()."""
         self._player.stop()
         self._player.setSource(QUrl())
+
+    def hideEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        """Sayfa gizlenince (başka bir sekmeye geçilince) videoyu duraklatır —
+        bkz. fsae_video_sync_page.hideEvent()."""
+        if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self._player.pause()
+            self._play_pause_button.setText("▶ Oynat")
+        super().hideEvent(event)

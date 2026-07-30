@@ -6,7 +6,9 @@ etiketlenmemiş bir session'ın grafiğe dökülecek verisi yok.
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QPushButton
 
+from f1_coach.infrastructure.fsae.structured_import_dialog import import_structured_session
 from f1_coach.domain.ports.fsae.vehicle_session_repository import VehicleSessionRepository
 from f1_coach.presentation import theme as theme_module
 
@@ -60,6 +62,11 @@ class FSAEVideoSessionPickerPage(QWidget):
         subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         layout.addWidget(subtitle)
 
+        self._add_structured_button = QPushButton("Hazır Dosya Ekle")
+        self._add_structured_button.setObjectName("PrimaryButton")
+        self._add_structured_button.clicked.connect(self._on_add_structured_session)
+        layout.addWidget(self._add_structured_button)
+
         self._empty_label = QLabel("Henüz etiketlenmiş bir FSAE session'ı yok.")
         self._empty_label.setStyleSheet(f"color: {theme_module.TEXT_MUTED}; font-size: 13px;")
         self._empty_label.hide()
@@ -101,3 +108,9 @@ class FSAEVideoSessionPickerPage(QWidget):
 
             row.clicked.connect(self.session_selected.emit)
             self._list_container.addWidget(row)
+
+    def _on_add_structured_session(self) -> None:
+        new_session_id = import_structured_session(self, self._session_repo)
+        if new_session_id is not None:
+            self.refresh()
+            self.session_selected.emit(new_session_id)

@@ -337,7 +337,7 @@ class AnaSayfaPage(QWidget):
             self._sessions_container.addWidget(empty)
             return
 
-        for session in sessions[:_MAX_RECENT_SESSIONS]:
+        for session in sessions:
             row = _make_session_row(session)
             row.clicked.connect(self.session_selected.emit)
             self._sessions_container.addWidget(row)
@@ -376,7 +376,7 @@ class AnaSayfaPage(QWidget):
             self._fsae_sessions_container.addWidget(empty)
             return
 
-        for session in sessions[:_MAX_RECENT_SESSIONS]:
+        for session in sessions:
             row = _make_fsae_session_row(session)
             row.clicked.connect(self.fsae_session_selected.emit)
             row.delete_clicked.connect(self._on_fsae_delete_clicked)   
@@ -403,8 +403,13 @@ class AnaSayfaPage(QWidget):
         if session is None:
             return
 
-        session_identifier = Path(session.raw_can_file).parent.name if session.raw_can_file else ""
-
+        if session.raw_can_file:
+            session_identifier = Path(session.raw_can_file).parent.name
+        elif session.decoded_telemetry_file:
+            session_identifier = Path(session.decoded_telemetry_file).parent.name
+        else:
+            session_identifier = ""
+            
         self._vehicle_session_repo.delete(session_id)
         if session_identifier:
             delete_session_files(session_identifier)

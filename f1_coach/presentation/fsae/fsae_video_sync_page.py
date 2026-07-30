@@ -391,6 +391,15 @@ class FSAEVideoSyncPage(QWidget):
         self._player.stop()
         self._player.setSource(QUrl())
 
+    def hideEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        """Sayfa gizlenince (başka bir sekmeye geçilince) videoyu duraklatır —
+        aksi halde QMediaPlayer arka planda oynamaya devam ediyordu, çünkü
+        widget'ın görünürlüğü oynatmayı otomatik durdurmuyor."""
+        if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self._player.pause()
+            self._play_pause_button.setText("▶ Oynat")
+        super().hideEvent(event)
+
     def _on_chart_point_clicked(self, x_value: float) -> None:
         """Grafikte bir noktaya tıklanınca, o noktanın x (zaman) değerini
         doğrudan telemetri zamanı kutusuna yazar — elle okuma/yazmaya gerek
