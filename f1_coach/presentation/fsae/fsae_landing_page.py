@@ -94,15 +94,10 @@ class _AppLauncherCard(QFrame):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        color_map = {
-            "GREEN": theme_module.GREEN, "BLUE": theme_module.BLUE,
-            "ORANGE": theme_module.ORANGE, "PURPLE": theme_module.PURPLE,
-        }
-        accent = color_map.get(self._accent_key, theme_module.ACCENT_RED)
         self.setStyleSheet(
             f"QFrame#AppLauncherCard {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
             "  border-radius: 16px; }"
-            f"QFrame#AppLauncherCard:hover {{ border: 1px solid {accent}; }}"
+            f"QFrame#AppLauncherCard:hover {{ border: 1px solid {theme_module.TEXT_PRIMARY}; }}"
         )
 
     def mousePressEvent(self, event) -> None:  # type: ignore[no-untyped-def]
@@ -159,6 +154,7 @@ class FSAELandingPage(QWidget):
 
     labeling_pressed = pyqtSignal()
     video_pressed = pyqtSignal()
+    ac_pressed = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -207,6 +203,14 @@ class FSAELandingPage(QWidget):
         self._video_card.clicked.connect(self.video_pressed.emit)
         layout.addWidget(self._video_card)
 
+        self._ac_card = _AppLauncherCard(
+            "Assetto Corsa Simülasyonu",
+            "Canlı UDP bağlantısıyla AC üzerinde FSAE aracını sürüp telemetri kaydet.",
+            "PURPLE",
+        )
+        self._ac_card.clicked.connect(self.ac_pressed.emit)
+        layout.addWidget(self._ac_card)
+
         layout.addSpacing(12)
 
         # --- Bilgilendirici özellik kartları (dikey liste) ---
@@ -226,6 +230,7 @@ class FSAELandingPage(QWidget):
     def _apply_theme(self) -> None:
         self._labeling_card.apply_theme()
         self._video_card.apply_theme()
+        self._ac_card.apply_theme()
 
         while self._features_column.count():
             item = self._features_column.takeAt(0)

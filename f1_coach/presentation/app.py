@@ -45,6 +45,14 @@ from f1_coach.infrastructure.storage.repositories.fsae.sqlite_vehicle_session_re
     SQLiteVehicleSessionRepository,
 )
 
+from f1_coach.infrastructure.storage.repositories.ac.sqlite_ac_session_repository import (
+    SQLiteAcSessionRepository,
+)
+from f1_coach.infrastructure.storage.repositories.ac.sqlite_ac_lap_repository import (
+    SQLiteAcLapRepository,
+)
+from f1_coach.infrastructure.ac_udp.ac_telemetry_client import AcTelemetryClient
+
 logger = get_logger(__name__)
 
 
@@ -78,19 +86,20 @@ def run() -> None:
     lap_repo = SQLiteLapRepository()
     car_setup_repo = SQLiteCarSetupRepository()
     vehicle_session_repo = SQLiteVehicleSessionRepository()
+    ac_session_repo = SQLiteAcSessionRepository()
+    ac_lap_repo = SQLiteAcLapRepository()
+    ac_port = bootstrap_profile.udp_port if bootstrap_profile else 9996
+    ac_telemetry_client = AcTelemetryClient(ac_session_repo, ac_lap_repo, port=ac_port)
     mapping_profile_repo = SQLiteMappingProfileRepository()
     telemetry_receiver = TelemetryReceiver(session_repo, lap_repo, car_setup_repo)    
     channel_mapping_repo = SQLiteChannelMappingRepository()
 
     window = MainWindow(
-        profile_repo, 
-        session_repo, 
-        lap_repo, 
-        car_setup_repo, 
-        telemetry_receiver,
-        vehicle_session_repo,
-        channel_mapping_repo,
-        mapping_profile_repo)    
+    profile_repo, session_repo, lap_repo, car_setup_repo, telemetry_receiver,
+    vehicle_session_repo, channel_mapping_repo, mapping_profile_repo,
+    ac_telemetry_client,
+    )    
+    
     window.show()
 
     sys.exit(app.exec())

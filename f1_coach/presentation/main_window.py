@@ -45,6 +45,13 @@ from f1_coach.presentation.fsae.fsae_labeling_page import FSAELabelingPage
 from f1_coach.presentation.fsae.fsae_import_page import FSAEImportPage
 from f1_coach.presentation.fsae.fsae_landing_page import FSAELandingPage
 from f1_coach.presentation.fsae.fsae_secondary_panel import FSAESecondaryPanel
+from f1_coach.infrastructure.ac_udp.ac_telemetry_client import AcTelemetryClient
+from f1_coach.presentation.fsae.ac_secondary_panel import AcSecondaryPanel
+from f1_coach.presentation.fsae.ac_placeholder_pages import (
+    make_ac_live_placeholder,
+    make_ac_lap_analizi_placeholder,
+    make_ac_session_gecmisi_placeholder,
+)
 
 from f1_coach.presentation.f125.f1_25_landing_page import F1_25LandingPage
 from f1_coach.presentation.f125.session_gecmisi_page import SessionGecmisiPage
@@ -75,6 +82,7 @@ class MainWindow(QMainWindow):
         vehicle_session_repo: VehicleSessionRepository,
         channel_mapping_repo: ChannelMappingRepository,
         mapping_profile_repo: SQLiteMappingProfileRepository,
+        ac_telemetry_client: AcTelemetryClient,
 
     ) -> None:
         super().__init__()
@@ -86,7 +94,7 @@ class MainWindow(QMainWindow):
         self._vehicle_session_repo = vehicle_session_repo
         self._channel_mapping_repo = channel_mapping_repo
         self._mapping_profile_repo = mapping_profile_repo
-
+        self._ac_telemetry_client = ac_telemetry_client
         self._active_fsae_session_id: int | None = None
 
         self.setWindowTitle("KOACH")
@@ -138,12 +146,18 @@ class MainWindow(QMainWindow):
         self._fsae_video_secondary_panel.video_sync_clicked.connect(self._show_fsae_video_sync)
         self._fsae_video_secondary_panel.playback_clicked.connect(self._show_fsae_playback)
 
+        self._ac_secondary_panel = AcSecondaryPanel()
+        self._ac_secondary_panel.live_clicked.connect(self._show_ac_live)
+        self._ac_secondary_panel.lap_analysis_clicked.connect(self._show_ac_lap_analizi)
+        self._ac_secondary_panel.session_history_clicked.connect(self._show_ac_session_gecmisi)
+
         # --- İçerik alanı ---
         self._content_stack = QStackedWidget()
         right_column = QWidget()
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
+        right_layout.addWidget(self._ac_secondary_panel)
         right_layout.addWidget(self._secondary_panel)
         right_layout.addWidget(self._fsae_secondary_panel)
         right_layout.addWidget(self._fsae_video_secondary_panel)
@@ -212,6 +226,8 @@ class MainWindow(QMainWindow):
         self._fsae_landing_page.video_pressed.connect(self.on_fsae_video_app_pressed)
         self._page_fsae_landing = self._content_stack.addWidget(self._fsae_landing_page)
 
+        self._fsae_landing_page.ac_pressed.connect(self.on_ac_app_pressed)
+        
         self._fsae_import_page = FSAEImportPage(self._vehicle_session_repo)
         self._fsae_import_page.session_imported.connect(self._on_fsae_session_imported)
         self._page_fsae_import = self._content_stack.addWidget(self._fsae_import_page)
@@ -223,6 +239,15 @@ class MainWindow(QMainWindow):
         self._fsae_video_session_picker_page = FSAEVideoSessionPickerPage(self._vehicle_session_repo)
         self._fsae_video_session_picker_page.session_selected.connect(self._on_fsae_video_session_selected)
         self._page_fsae_video_session_picker = self._content_stack.addWidget(self._fsae_video_session_picker_page)
+
+        self._ac_live_page = make_ac_live_placeholder()
+        self._page_ac_live = self._content_stack.addWidget(self._ac_live_page)
+
+        self._ac_lap_analizi_page = make_ac_lap_analizi_placeholder()
+        self._page_ac_lap_analizi = self._content_stack.addWidget(self._ac_lap_analizi_page)
+
+        self._ac_session_gecmisi_page = make_ac_session_gecmisi_placeholder()
+        self._page_ac_session_gecmisi = self._content_stack.addWidget(self._ac_session_gecmisi_page)
 
         self._fsae_video_sync_page = FSAEVideoSyncPage(self._vehicle_session_repo)
         self._page_fsae_video_sync = self._content_stack.addWidget(self._fsae_video_sync_page)
@@ -254,6 +279,7 @@ class MainWindow(QMainWindow):
         self._secondary_panel.close_panel()
         self._fsae_secondary_panel.close_panel()
         self._fsae_video_secondary_panel.close_panel()
+        self._ac_secondary_panel.close_panel()
 
     def _show_ana_sayfa(self) -> None:
         self._close_all_secondary_panels()
@@ -309,6 +335,15 @@ class MainWindow(QMainWindow):
             self._fsae_playback_page.load_session(self._active_fsae_session_id)
         self._content_stack.setCurrentIndex(self._page_fsae_playback)
 
+    def _show_ac_live(self) -> None:
+        self._content_stack.setCurrentIndex(self._page_ac_live)
+
+    def _show_ac_lap_analizi(self) -> None:
+        self._content_stack.setCurrentIndex(self._page_ac_lap_analizi)
+
+    def _show_ac_session_gecmisi(self) -> None:
+        self._content_stack.setCurrentIndex(self._page_ac_session_gecmisi)
+
     def _on_fsae_session_imported(self, session_id: int) -> None:
         self._active_fsae_session_id = session_id
         self._fsae_labeling_page.load_session(session_id)
@@ -346,6 +381,11 @@ class MainWindow(QMainWindow):
         """FSAE Landing'deki 'Video + Pist Takip' kartına basıldığında çağrılır."""
         self._fsae_video_secondary_panel.open_panel()
         self._show_fsae_video_session_picker()
+
+    def on_ac_app_pressed(self) -> None:
+        """FSAE Landing'deki 'Assetto Corsa Simülasyonu' kartına basıldığında çağrılır."""
+        self._ac_secondary_panel.open_panel()
+        self._show_ac_live()
 
     def on_f1_25_start_pressed(self) -> None:
         """F1 25 Landing sayfasındaki "Başla" butonu buraya bağlanır.
@@ -431,5 +471,6 @@ class MainWindow(QMainWindow):
         self._fsae_video_sync_page.shutdown()
         self._fsae_playback_page.shutdown()
         self._telemetry_receiver.stop()
+        self._ac_telemetry_client.stop()
         super().closeEvent(event)
         QApplication.instance().quit()

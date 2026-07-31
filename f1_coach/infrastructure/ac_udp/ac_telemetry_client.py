@@ -50,6 +50,10 @@ from f1_coach.infrastructure.ac_udp.telemetry_mapper import (
 )
 from f1_coach.infrastructure.logging.logger import get_logger
 
+from f1_coach.domain.ports.ac.ac_lap_repository import AcLapRepository
+from f1_coach.domain.ports.ac.ac_session_repository import AcSessionRepository
+from f1_coach.infrastructure.ac_udp.ac_session_manager import AcSessionManager
+
 logger = get_logger(__name__)
 
 _RECV_BUFFER_SIZE = 2048
@@ -65,14 +69,24 @@ class AcConnectionError(Exception):
 class AcTelemetryClient:
     """Assetto Corsa ile UDP üzerinden handshake yapıp telemetriyi dinler."""
 
-    def __init__(self, manager, host: str = "127.0.0.1", port: int = 9996) -> None:
-        self._manager = manager
+    def __init__(
+        self,
+        ac_session_repo: AcSessionRepository,
+        ac_lap_repo: AcLapRepository,
+        host: str = "127.0.0.1",
+        port: int = 9996,
+    ) -> None:
+        self._manager = AcSessionManager(ac_session_repo, ac_lap_repo)
         self._host = host
         self._port = port
         self._socket: socket.socket | None = None
         self._running = False
         self._thread: threading.Thread | None = None
         self._session_start_time: float | None = None
+
+    @property
+    def session_manager(self) -> AcSessionManager:
+        return self._manager
 
     def connect(self) -> None:
         """Soketi açar, handshake yapar. Başarısız olursa AcConnectionError fırlatır."""
