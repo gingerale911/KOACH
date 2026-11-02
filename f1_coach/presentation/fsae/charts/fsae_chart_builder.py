@@ -91,7 +91,7 @@ def build_multi_channel_html(
                 line=dict(color="#FFFFFF", width=2, dash="dot"),
             ))
 
-    fig.update_xaxes(title_text="Zaman (s)", row=num_rows, col=1)
+    fig.update_xaxes(title_text="Time (s)", row=num_rows, col=1)
     fig.update_layout(
         height=compute_chart_height(num_rows), showlegend=False,
         margin=dict(l=50, r=20, t=30, b=40), template="plotly_dark",

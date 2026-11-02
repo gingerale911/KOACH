@@ -78,7 +78,7 @@ class FSAEPlaybackPage(QWidget):
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
 
-        self._header_label = QLabel("Oynatım")
+        self._header_label = QLabel("Playback")
         self._header_label.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self._header_label)
 
@@ -86,11 +86,11 @@ class FSAEPlaybackPage(QWidget):
         self._missing_sync_frame = QFrame()
         missing_layout = QVBoxLayout(self._missing_sync_frame)
         missing_label = QLabel(
-            "Bu session için video yüklenmemiş ya da senkron noktası belirlenmemiş."
+            "No video uploaded or sync point set for this session."
         )
         missing_label.setWordWrap(True)
         missing_layout.addWidget(missing_label)
-        self._go_to_sync_button = QPushButton("Video & Senkron'a Git")
+        self._go_to_sync_button = QPushButton("Go to Video & Sync")
         self._go_to_sync_button.setObjectName("PrimaryButton")
         self._go_to_sync_button.clicked.connect(self._on_go_to_sync)
         missing_layout.addWidget(self._go_to_sync_button)
@@ -117,7 +117,7 @@ class FSAEPlaybackPage(QWidget):
         self._player.durationChanged.connect(self._on_duration_changed)
 
         transport_row = QHBoxLayout()
-        self._play_pause_button = QPushButton("▶ Oynat")
+        self._play_pause_button = QPushButton("▶ Play")
         self._play_pause_button.setObjectName("PrimaryButton")
         self._play_pause_button.clicked.connect(self._on_toggle_play)
         transport_row.addWidget(self._play_pause_button)
@@ -155,7 +155,7 @@ class FSAEPlaybackPage(QWidget):
         self._splitter.setStretchFactor(1, 1)
         self._splitter.setSizes([480, 800])
 
-        self._finish_button = QPushButton("✓ Session'ı Bitir")
+        self._finish_button = QPushButton("✓ Finish Session")
         self._finish_button.setObjectName("PrimaryButton")
         self._finish_button.clicked.connect(self.session_finished.emit)
         layout.addWidget(self._finish_button)
@@ -181,7 +181,7 @@ class FSAEPlaybackPage(QWidget):
             return
 
         self._telemetry_df = None
-        self._header_label.setText(f"Oynatım — {session.name} (telemetri yükleniyor...)")
+        self._header_label.setText(f"Playback — {session.name} (loading telemetry...)")
         self._splitter.setEnabled(False)
 
         self._worker = BackgroundWorker(read_decoded_telemetry, session.decoded_telemetry_file)
@@ -191,7 +191,7 @@ class FSAEPlaybackPage(QWidget):
 
     def _on_telemetry_loaded(self, df) -> None:
         self._telemetry_df = df
-        self._header_label.setText(f"Oynatım — {self._current_session.name}")
+        self._header_label.setText(f"Playback — {self._current_session.name}")
 
         channels = sorted(self._telemetry_df["channel_name"].unique())
         self._channel_list.blockSignals(True)
@@ -209,7 +209,7 @@ class FSAEPlaybackPage(QWidget):
 
     def _on_telemetry_load_failed(self, exc: Exception) -> None:
         logger.error("FSAE telemetri verisi yüklenemedi: %s", exc)
-        notify(self, "Yükleme hatası", f"Telemetri verisi okunamadı: {exc}")
+        notify(self, "Loading Error", f"Failed to read telemetry data: {exc}")
         self._missing_sync_frame.setVisible(True)
         self._splitter.setVisible(False)
         self._finish_button.setVisible(False)
@@ -225,10 +225,10 @@ class FSAEPlaybackPage(QWidget):
     def _on_toggle_play(self) -> None:
         if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self._player.pause()
-            self._play_pause_button.setText("▶ Oynat")
+            self._play_pause_button.setText("▶ Play")
         else:
             self._player.play()
-            self._play_pause_button.setText("⏸ Duraklat")
+            self._play_pause_button.setText("⏸ Pause")
 
     def _on_slider_moved(self, value: int) -> None:
         self._player.setPosition(value)
@@ -296,5 +296,5 @@ class FSAEPlaybackPage(QWidget):
         bkz. fsae_video_sync_page.hideEvent()."""
         if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self._player.pause()
-            self._play_pause_button.setText("▶ Oynat")
+            self._play_pause_button.setText("▶ Play")
         super().hideEvent(event)

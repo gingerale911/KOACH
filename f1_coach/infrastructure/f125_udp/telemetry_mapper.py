@@ -8,6 +8,7 @@ ERS store energy: the UDP field is in Joules (max ~4 000 000 J).
 We normalise to a 0–100 percentage for the UI using the F1 25 max of 4 MJ.
 """
 
+import math
 from dataclasses import dataclass
 
 from f1_coach.domain.models.f125.enums import SessionType, TrackName, WeatherCondition
@@ -140,6 +141,19 @@ def map_assist_config(packet: PacketSessionData) -> AssistConfig:
     )
 
 
+def _normalise_pedal(value: float) -> float:
+    """Guard against invalid UDP values from a game or packet edge case.
+
+    The official F1 telemetry contract stores throttle/brake as a 0.0–1.0 pedal
+    application range. If the game reports a temporary spike or a malformed frame,
+    clamp to the valid domain instead of letting the dashboard or analytics see
+    impossible numbers like 3.4 or 1.7.
+    """
+    if not math.isfinite(value):
+        return 0.0
+    return max(0.0, min(1.0, float(value)))
+
+
 def map_telemetry_point(
     header: PacketHeader,
     car: CarTelemetryData,
@@ -157,8 +171,8 @@ def map_telemetry_point(
         timestamp=float(header.m_sessionTime),
         track_position=track_position,
         speed=float(car.m_speed),
-        throttle=float(car.m_throttle),
-        brake=float(car.m_brake),
+        throttle=_normalise_pedal(float(car.m_throttle)),
+        brake=_normalise_pedal(float(car.m_brake)),
         steering=float(car.m_steer),
         gear=int(car.m_gear),
         rpm=int(car.m_engineRPM),

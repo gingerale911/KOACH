@@ -28,14 +28,14 @@ CURRENT_DIR = Path(__file__).resolve().parent.parent
 ICONS_DIR = CURRENT_DIR / "assets" / "icons"
 
 _FEATURE_CARDS = [
-    ("udp.svg", "GREEN", "Gerçek Zamanlı UDP Telemetri Kaydı",
-     "F1 25'in yayınladığı UDP verisini anlık olarak yakalar, her turda hız, fren, gaz ve direksiyon verisini kaydeder."),
-    ("graph.svg", "BLUE", "Lap Delta ve Hız Trace Grafikleri",
-     "Turlar arasındaki farkı görselleştir. Nerede zaman kazandın, nerede kaybettin — saniye saniye."),
-    ("compare.svg", "ORANGE", "Fren / Gaz Overlay Analizi",
-     "Fren noktalarını ve gaz uygulama profillerini bindirme grafiklerle karşılaştır."),
-    ("feedback.svg", "PURPLE", "Session Sonrası AI Geri Bildirim",
-     "Sürüşünü bulut tabanlı AI modeliyle analiz et. Kişiselleştirilmiş koçluk yorumları ve tur iyileştirme önerileri al."),
+    ("udp.svg", "GREEN", "Real-Time UDP Telemetry Capture",
+     "Captures F1 25 broadcast UDP data in real time, recording speed, brake, throttle, and steering each lap."),
+    ("graph.svg", "BLUE", "Lap Delta and Speed Trace Charts",
+     "Visualize lap differences. See where you gained or lost time — second by second."),
+    ("compare.svg", "ORANGE", "Brake / Throttle Overlay Analysis",
+     "Compare braking points and throttle application profiles with superimposed charts."),
+    ("feedback.svg", "PURPLE", "Post-Session AI Coaching Feedback",
+     "Analyze your driving with AI. Receive personalized coaching feedback and lap improvement suggestions."),
 ]
 
 
@@ -98,12 +98,12 @@ class F1_25LandingPage(QWidget):
         layout.setContentsMargins(48, 56, 48, 48)
         layout.setSpacing(20)
 
-        title = QLabel("F1 25 Koçluğu")
+        title = QLabel("F1 25 Coaching")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 32px; font-weight: 800;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Telemetri verisini gerçek zamanlı kaydet, AI destekli analizle sürüşünü bir üst seviyeye taşı.")
+        subtitle = QLabel("Record telemetry in real time and elevate your driving with AI-powered analysis.")
         subtitle.setWordWrap(True)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 14px;")
@@ -119,7 +119,7 @@ class F1_25LandingPage(QWidget):
         layout.addStretch(1)
 
         # --- CTA butonu ---
-        self._start_button = QPushButton("Başla")
+        self._start_button = QPushButton("Start")
         self._start_button.setFixedHeight(48)
         self._start_button.setMinimumWidth(200)
         self._start_button.clicked.connect(self.start_pressed.emit)

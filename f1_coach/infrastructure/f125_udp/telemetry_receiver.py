@@ -12,10 +12,12 @@ The socket has a 1-second timeout so the loop can check _running without
 blocking forever when the game is not sending data.
 """
 
+import math
 import socket
 import threading
 import time
 
+from f1_coach.domain.models.f125.live_snapshot import LiveTelemetrySnapshot
 from f1_coach.domain.ports.f125.car_setup_repository import CarSetupRepository
 from f1_coach.domain.ports.f125.lap_repository import LapRepository
 from f1_coach.domain.ports.f125.session_repository import SessionRepository
@@ -51,6 +53,13 @@ _BUFFER_SIZE = 2048
 _SOCKET_TIMEOUT = 1.0  # seconds — allows the loop to check _running
 
 
+def _normalise_pedal(value: float) -> float:
+    """Clamp pedal values into the valid 0.0–1.0 range used by the domain."""
+    if not math.isfinite(value):
+        return 0.0
+    return max(0.0, min(1.0, float(value)))
+
+
 class TelemetryReceiver:
     """Receives F1 25 UDP telemetry and forwards parsed data to SessionManager."""
 
@@ -71,10 +80,19 @@ class TelemetryReceiver:
         self._player_index: int = 0
         self._tyre_compound: int = 16   # default: C1
         self._last_packet_time: float | None = None
+        self._snapshot = LiveTelemetrySnapshot()
 
     # ------------------------------------------------------------------
     # Public interface
     # ------------------------------------------------------------------
+
+    @property
+    def live_snapshot(self) -> LiveTelemetrySnapshot:
+        return self._snapshot
+
+    @property
+    def is_running(self) -> bool:
+        return self._running
 
     @property
     def session_manager(self) -> SessionManager:
@@ -176,6 +194,13 @@ class TelemetryReceiver:
         car = packet.m_carMotionData[self._player_index]
         x, z = map_car_position(car)
         self._manager.on_car_position(x, z, self._track_position)
+
+        self._snapshot.g_force_lateral = float(car.m_gForceLateral)
+        self._snapshot.g_force_longitudinal = float(car.m_gForceLongitudinal)
+        self._snapshot.g_force_vertical = float(car.m_gForceVertical)
+        self._snapshot.world_x = float(car.m_worldPositionX)
+        self._snapshot.world_z = float(car.m_worldPositionZ)
+        self._snapshot.last_packet_timestamp = time.monotonic()
     
     def _handle_session(self, data: bytes) -> None:
         packet = parse_session(data)
@@ -188,6 +213,16 @@ class TelemetryReceiver:
             uid, track, session_type, self._track_length, assist_config
         )
         self._manager.on_session_conditions(map_session_conditions(packet))
+
+        self._snapshot.track_id = int(packet.m_trackId)
+        self._snapshot.track_name = track.display_name
+        self._snapshot.session_type_name = session_type.display_name
+        self._snapshot.total_laps = int(packet.m_totalLaps)
+        self._snapshot.track_length = self._track_length
+        self._snapshot.air_temperature = int(packet.m_airTemperature)
+        self._snapshot.track_temperature = int(packet.m_trackTemperature)
+        self._snapshot.weather_name = str(session_type.display_name)
+        self._snapshot.last_packet_timestamp = time.monotonic()
 
     def _handle_lap(self, data: bytes, header) -> None:
         packet = parse_lap_data(data)
@@ -206,6 +241,17 @@ class TelemetryReceiver:
             tyre_compound=self._tyre_compound,
         )
 
+        self._snapshot.car_position = max(1, int(car.m_carPosition))
+        self._snapshot.current_lap_num = int(car.m_currentLapNum)
+        self._snapshot.current_lap_time_ms = int(car.m_currentLapTimeInMS)
+        self._snapshot.last_lap_time_ms = int(car.m_lastLapTimeInMS)
+        self._snapshot.lap_distance = float(car.m_lapDistance)
+        self._snapshot.delta_to_front_ms = int(car.m_deltaToCarInFrontInMS)
+        if int(car.m_lastLapTimeInMS) > 0:
+            if self._snapshot.best_lap_time_ms == 0 or int(car.m_lastLapTimeInMS) < self._snapshot.best_lap_time_ms:
+                self._snapshot.best_lap_time_ms = int(car.m_lastLapTimeInMS)
+        self._snapshot.last_packet_timestamp = time.monotonic()
+
     def _handle_telemetry(self, data: bytes, header) -> None:
         packet = parse_car_telemetry(data)
         if packet is None:
@@ -213,6 +259,43 @@ class TelemetryReceiver:
         car = packet.m_carTelemetryData[self._player_index]
         point = map_telemetry_point(header, car, self._track_position)
         self._manager.on_telemetry_point(point)
+
+        speed = int(car.m_speed)
+        self._snapshot.speed_kmh = speed
+        if speed > self._snapshot.max_speed_kmh:
+            self._snapshot.max_speed_kmh = speed
+        self._snapshot.gear = int(car.m_gear)
+        self._snapshot.engine_rpm = int(car.m_engineRPM)
+        self._snapshot.throttle = _normalise_pedal(float(car.m_throttle))
+        self._snapshot.steer = float(car.m_steer)
+        self._snapshot.brake = _normalise_pedal(float(car.m_brake))
+        self._snapshot.drs_active = bool(car.m_drs == 1)
+        self._snapshot.engine_temperature = int(car.m_engineTemperature)
+        self._snapshot.tyres_surface_temp = (
+            int(car.m_tyresSurfaceTemperature[0]),
+            int(car.m_tyresSurfaceTemperature[1]),
+            int(car.m_tyresSurfaceTemperature[2]),
+            int(car.m_tyresSurfaceTemperature[3]),
+        )
+        self._snapshot.tyres_inner_temp = (
+            int(car.m_tyresInnerTemperature[0]),
+            int(car.m_tyresInnerTemperature[1]),
+            int(car.m_tyresInnerTemperature[2]),
+            int(car.m_tyresInnerTemperature[3]),
+        )
+        self._snapshot.tyres_pressure_psi = (
+            float(car.m_tyresPressure[0]),
+            float(car.m_tyresPressure[1]),
+            float(car.m_tyresPressure[2]),
+            float(car.m_tyresPressure[3]),
+        )
+        self._snapshot.brakes_temperature = (
+            int(car.m_brakesTemperature[0]),
+            int(car.m_brakesTemperature[1]),
+            int(car.m_brakesTemperature[2]),
+            int(car.m_brakesTemperature[3]),
+        )
+        self._snapshot.last_packet_timestamp = time.monotonic()
 
     def _handle_car_status(self, data: bytes, header) -> None:
         packet = parse_car_status(data)
@@ -222,6 +305,14 @@ class TelemetryReceiver:
         self._tyre_compound = int(car.m_actualTyreCompound)
         point = map_car_status_point(header, car, self._track_position)
         self._manager.on_car_status_point(point)
+
+        self._snapshot.fuel_in_tank = float(car.m_fuelInTank)
+        self._snapshot.fuel_capacity = float(car.m_fuelCapacity) if car.m_fuelCapacity > 0 else 110.0
+        self._snapshot.fuel_remaining_laps = float(car.m_fuelRemainingLaps)
+        self._snapshot.ers_store_energy = float(car.m_ersStoreEnergy)
+        if car.m_maxRPM > 0:
+            self._snapshot.max_rpm = int(car.m_maxRPM)
+        self._snapshot.last_packet_timestamp = time.monotonic()
 
     def _handle_car_setup(self, data: bytes) -> None:
         packet = parse_car_setup(data)

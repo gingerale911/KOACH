@@ -86,7 +86,7 @@ class _AppLauncherCard(QFrame):
 
         layout.addLayout(text_column, stretch=1)
 
-        self._start_button = QPushButton("Başla")
+        self._start_button = QPushButton("Start")
         self._start_button.setObjectName("PrimaryButton")
         self._start_button.clicked.connect(self.clicked.emit)
         layout.addWidget(self._start_button, alignment=Qt.AlignmentFlag.AlignVCenter)
@@ -148,8 +148,8 @@ class FSAELandingPage(QWidget):
     """FSAE karşılama ekranı — iki alt uygulamaya giriş noktası.
 
     Signals:
-        labeling_pressed: "CAN Veri Etiketleme" kartındaki "Başla"ya basıldı.
-        video_pressed:    "Video + Pist Takip" kartındaki "Başla"ya basıldı.
+        labeling_pressed: "CAN Data Labeling" kartındaki "Başla"ya basıldı.
+        video_pressed:    "Video + Track Analysis" kartındaki "Başla"ya basıldı.
     """
 
     labeling_pressed = pyqtSignal()
@@ -174,12 +174,12 @@ class FSAELandingPage(QWidget):
         layout.setContentsMargins(48, 56, 48, 48)
         layout.setSpacing(20)
 
-        title = QLabel("FSAE Telemetri Analizi")
+        title = QLabel("FSAE Telemetry Analysis")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 32px; font-weight: 800;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Devam etmek istediğin uygulamayı seç.")
+        subtitle = QLabel("Select the application module you want to launch.")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 14px;")
         layout.addWidget(subtitle)
@@ -188,24 +188,24 @@ class FSAELandingPage(QWidget):
 
         # --- İki uygulama kartı ---
         self._labeling_card = _AppLauncherCard(
-            "CAN Veri Etiketleme",
-            "Ham CAN log dosyasını içe aktar, kanalları elle etiketle ve kaydet.",
+            "CAN Data Labeling",
+            "Import raw CAN log files, manually label channels, and save.",
             "ORANGE",
         )
         self._labeling_card.clicked.connect(self.labeling_pressed.emit)
         layout.addWidget(self._labeling_card)
 
         self._video_card = _AppLauncherCard(
-            "Video + Pist Takip",
-            "Etiketlenmiş bir session seç, video yükle, senkronize incele.",
+            "Video + Track Analysis",
+            "Select a labeled session, upload video, and inspect synchronously.",
             "BLUE",
         )
         self._video_card.clicked.connect(self.video_pressed.emit)
         layout.addWidget(self._video_card)
 
         self._ac_card = _AppLauncherCard(
-            "Assetto Corsa Simülasyonu",
-            "Canlı UDP bağlantısıyla AC üzerinde FSAE aracını sürüp telemetri kaydet.",
+            "Assetto Corsa Simulation",
+            "Drive an FSAE vehicle in AC via live UDP and record telemetry.",
             "PURPLE",
         )
         self._ac_card.clicked.connect(self.ac_pressed.emit)
@@ -214,7 +214,7 @@ class FSAELandingPage(QWidget):
         layout.addSpacing(12)
 
         # --- Bilgilendirici özellik kartları (dikey liste) ---
-        self._grid_label = QLabel("MODÜL ÖZELLİKLERİ")
+        self._grid_label = QLabel("MODULE FEATURES")
         self._grid_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         layout.addWidget(self._grid_label)
 

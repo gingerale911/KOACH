@@ -32,7 +32,7 @@ from f1_coach.infrastructure.storage.f125_parquet_writer import delete_session_f
 
 logger = get_logger(__name__)
 
-_ALL = "Tümü"
+_ALL = "All"
 
 
 class SessionCard(QFrame):
@@ -71,7 +71,7 @@ class SessionCard(QFrame):
 
         subtitle_text = (
             f"{session.created_at.strftime('%d.%m.%Y')} · "
-            f"{session.lap_count} tur · En iyi: {best_lap_text}"
+            f"{session.lap_count} laps · Best: {best_lap_text}"
         )
         if weather is not None:
             subtitle_text += f" · {weather.display_name}"
@@ -83,7 +83,7 @@ class SessionCard(QFrame):
 
         delete_button = QPushButton("🗑")
         delete_button.setFixedSize(28, 28)
-        delete_button.setToolTip("Session'ı sil")
+        delete_button.setToolTip("Delete session")
         delete_button.setStyleSheet(
             "QPushButton { background: transparent; border: none; }"
             "QPushButton:hover { background-color: rgba(255,255,255,0.08); border-radius: 6px; }"
@@ -116,15 +116,15 @@ class SessionGecmisiPage(QWidget):
 
         # --- Filtre çubuğu ---
         filter_row = QHBoxLayout()
-        filter_row.addWidget(QLabel("Pist:"))
+        filter_row.addWidget(QLabel("Track:"))
         self._track_filter = QComboBox()
         filter_row.addWidget(self._track_filter)
 
-        filter_row.addWidget(QLabel("Yıl:"))
+        filter_row.addWidget(QLabel("Year:"))
         self._year_filter = QComboBox()
         filter_row.addWidget(self._year_filter)
 
-        filter_row.addWidget(QLabel("Hava Durumu:"))
+        filter_row.addWidget(QLabel("Weather:"))
         self._weather_filter = QComboBox()
         filter_row.addWidget(self._weather_filter)
 
@@ -143,7 +143,7 @@ class SessionGecmisiPage(QWidget):
         self._scroll_area.setWidget(self._card_container)
         layout.addWidget(self._scroll_area, stretch=1)
 
-        self._empty_label = QLabel("Henüz kaydedilmiş session yok")
+        self._empty_label = QLabel("No saved sessions yet")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._empty_label.setStyleSheet(f"font-size: 14px; color: {theme_module.TEXT_MUTED};")        
         layout.addWidget(self._empty_label)
@@ -216,8 +216,8 @@ class SessionGecmisiPage(QWidget):
 
     def _on_delete_clicked(self, session_id: int) -> None:
         reply = QMessageBox.question(
-            self, "Emin misin?",
-            "Bu session ve tüm verileri kalıcı olarak silinecek. Devam edilsin mi?",
+            self, "Are you sure?",
+            "This session and all its data will be permanently deleted. Continue?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:

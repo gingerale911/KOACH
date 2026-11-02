@@ -55,19 +55,19 @@ class FSAEChartPage(QWidget):
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
 
-        self._header_label = QLabel("Grafik")
+        self._header_label = QLabel("Charts")
         self._header_label.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self._header_label)
 
         self._maximize_banner = WarningBanner(
-            "Grafikleri daha rahat inceleyebilmek için pencereyi büyütmeni öneririz.",
-            "Büyüt",
+            "We recommend maximizing the window to inspect charts more comfortably.",
+            "Maximize",
         )
         self._maximize_banner.action_clicked.connect(self._on_maximize_clicked)
         layout.addWidget(self._maximize_banner)
 
         self._empty_label = QLabel(
-            "Bu session için henüz çözümlenmiş veri yok — önce Etiketleme sekmesini tamamla."
+            "No decoded data yet for this session — complete the Labeling tab first."
         )
         self._empty_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 13px;")
         layout.addWidget(self._empty_label)
@@ -76,7 +76,7 @@ class FSAEChartPage(QWidget):
         layout.addLayout(content_row, stretch=1)
 
         channel_column = QVBoxLayout()
-        channel_label = QLabel("KANALLAR")
+        channel_label = QLabel("CHANNELS")
         channel_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         channel_column.addWidget(channel_label)
 
@@ -88,7 +88,7 @@ class FSAEChartPage(QWidget):
         content_row.addLayout(channel_column)
 
         self._chart = PlotlyChartWidget()
-        chart_label = QLabel("GRAFİKLER")
+        chart_label = QLabel("CHARTS")
         chart_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
 
         chart_scroll = QScrollArea()
@@ -97,7 +97,7 @@ class FSAEChartPage(QWidget):
         chart_scroll.setWidget(self._chart)
         content_row.addWidget(chart_scroll, stretch=1)
 
-        self._finish_button = QPushButton("Session'ı Bitir")
+        self._finish_button = QPushButton("Finish Session")
         self._finish_button.setObjectName("PrimaryButton")
         self._finish_button.clicked.connect(self.session_finished.emit)
         layout.addWidget(self._finish_button)
@@ -119,7 +119,7 @@ class FSAEChartPage(QWidget):
             self._set_empty_state(True)
             return
 
-        self._header_label.setText(f"Grafik — {session.name}")
+        self._header_label.setText(f"Charts — {session.name}")
         self._telemetry_df = read_decoded_telemetry(session.decoded_telemetry_file)
 
         channels = sorted(self._telemetry_df["channel_name"].unique())

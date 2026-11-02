@@ -54,20 +54,20 @@ class FSAEVideoSessionPickerPage(QWidget):
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
 
-        title = QLabel("Session Seç")
+        title = QLabel("Select Session")
         title.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Video ile birlikte incelemek istediğin, etiketlenmiş bir session seç.")
+        subtitle = QLabel("Select a labeled session you want to inspect alongside video.")
         subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         layout.addWidget(subtitle)
 
-        self._add_structured_button = QPushButton("Hazır Dosya Ekle")
+        self._add_structured_button = QPushButton("Add Prepared File")
         self._add_structured_button.setObjectName("PrimaryButton")
         self._add_structured_button.clicked.connect(self._on_add_structured_session)
         layout.addWidget(self._add_structured_button)
 
-        self._empty_label = QLabel("Henüz etiketlenmiş bir FSAE session'ı yok.")
+        self._empty_label = QLabel("No labeled FSAE sessions yet.")
         self._empty_label.setStyleSheet(f"color: {theme_module.TEXT_MUTED}; font-size: 13px;")
         self._empty_label.hide()
         layout.addWidget(self._empty_label)

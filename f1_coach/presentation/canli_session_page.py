@@ -88,7 +88,7 @@ class CanliSessionPage(QWidget):
         pill_layout.setContentsMargins(12, 5, 12, 5)
         self._status_dot = QLabel("●")
         pill_layout.addWidget(self._status_dot)
-        self._status_text = QLabel("Session bekleniyor")
+        self._status_text = QLabel("Waiting for session")
         self._status_text.setStyleSheet("font-size: 12px; font-weight: 500; background: transparent;")
         pill_layout.addWidget(self._status_text)
         top_row.addWidget(self._status_pill)
@@ -103,7 +103,7 @@ class CanliSessionPage(QWidget):
         layout.addLayout(top_row)
 
         # --- Temel Session Bilgisi ---
-        self._session_info_label = QLabel("Session bekleniyor...")
+        self._session_info_label = QLabel("Waiting for session...")
         self._session_info_label.setStyleSheet("font-size: 16px; font-weight: 700;")
         layout.addWidget(self._session_info_label)
 
@@ -177,7 +177,7 @@ class CanliSessionPage(QWidget):
         self._last_lap_count = -1
         self._stale_warning_shown = False
         self._lap_list.clear()
-        self._session_info_label.setText("Session bekleniyor...")
+        self._session_info_label.setText("Waiting for session...")
         self._set_status_recording()
         self._end_button.setEnabled(True)
         for chip in (self._speed_chip, self._throttle_chip, self._rpm_chip):
@@ -189,7 +189,7 @@ class CanliSessionPage(QWidget):
         if session is not None and session.lap_count != self._last_lap_count:
             self._session_info_label.setText(
                 f"{session.track.display_name} — {session.session_type.display_name} "
-                f"— {session.lap_count} tur tamamlandı"
+                f"— {session.lap_count} laps completed"
             )
             self._refresh_lap_list(session)
             self._last_lap_count = session.lap_count
@@ -215,8 +215,8 @@ class CanliSessionPage(QWidget):
         for lap in session.laps:
             minutes, seconds = divmod(lap.lap_time, 60)
             time_text = f"{int(minutes)}:{seconds:06.3f}"
-            validity = "Geçerli" if lap.is_valid else "Geçersiz"
-            item = QListWidgetItem(f"Tur {lap.lap_number} — {time_text} ({validity})")
+            validity = "Valid" if lap.is_valid else "Invalid"
+            item = QListWidgetItem(f"Lap {lap.lap_number} — {time_text} ({validity})")
             if not lap.is_valid:
                 item.setForeground(Qt.GlobalColor.gray)
             self._lap_list.addItem(item)
@@ -227,7 +227,7 @@ class CanliSessionPage(QWidget):
             f"  border: 1px solid {theme_module.BORDER}; border-radius: 100px; }}"
         )
         self._status_dot.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 10px; background: transparent;")
-        self._status_text.setText("Session bekleniyor")
+        self._status_text.setText("Waiting for session")
         self._status_text.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px; font-weight: 500; background: transparent;")
 
     def _set_status_recording(self) -> None:
@@ -236,7 +236,7 @@ class CanliSessionPage(QWidget):
             f"  border: 1px solid {theme_module.rgba(theme_module.GREEN, 0.2)}; border-radius: 100px; }}"
         )
         self._status_dot.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 10px; background: transparent;")
-        self._status_text.setText("Telemetri kaydediliyor")
+        self._status_text.setText("Telemetry recording")
         self._status_text.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px; font-weight: 500; background: transparent;")
 
     def _set_status_disconnected(self) -> None:
@@ -245,7 +245,7 @@ class CanliSessionPage(QWidget):
             f"  border: 1px solid {theme_module.rgba(theme_module.ACCENT_RED, 0.2)}; border-radius: 100px; }}"
         )
         self._status_dot.setStyleSheet(f"color: {theme_module.ACCENT_RED}; font-size: 10px; background: transparent;")
-        self._status_text.setText("Telemetri alınamıyor")
+        self._status_text.setText("No telemetry received")
         self._status_text.setStyleSheet(f"color: {theme_module.ACCENT_RED}; font-size: 12px; font-weight: 500; background: transparent;")
         logger.warning("Canlı Session ekranı: telemetri akışı durdu.")
 

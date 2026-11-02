@@ -58,6 +58,7 @@ from f1_coach.presentation.f125.session_gecmisi_page import SessionGecmisiPage
 from f1_coach.presentation.f125.canli_session_page import CanliSessionPage
 from f1_coach.presentation.f125.lap_analizi_page import LapAnaliziPage
 from f1_coach.presentation.f125.secondary_panel import SecondaryPanel
+from f1_coach.presentation.f125.dashboard import LiveDashboardPage
 
 from f1_coach.presentation.sidebar import Sidebar
 from f1_coach.presentation.ayarlar_page import AyarlarPage
@@ -133,6 +134,7 @@ class MainWindow(QMainWindow):
         # --- Katman 2: Kayar panel (varsayılan gizli) ---
         self._secondary_panel = SecondaryPanel()
         self._secondary_panel.live_session_clicked.connect(self._show_canli_session)
+        self._secondary_panel.live_dashboard_clicked.connect(self._show_live_dashboard)
         self._secondary_panel.lap_analysis_clicked.connect(self._show_lap_analizi)
         self._secondary_panel.session_history_clicked.connect(self._show_session_gecmisi)
 
@@ -210,7 +212,11 @@ class MainWindow(QMainWindow):
 
         self._canli_session_page = CanliSessionPage(self._telemetry_receiver)
         self._canli_session_page.session_ended.connect(self._on_live_session_ended)
+        self._canli_session_page.lap_selected.connect(self._open_live_lap_in_analysis)
         self._page_canli_session = self._content_stack.addWidget(self._canli_session_page)
+
+        self._live_dashboard_page = LiveDashboardPage(self._telemetry_receiver, self._profile_repo)
+        self._page_live_dashboard = self._content_stack.addWidget(self._live_dashboard_page)
         
         self._lap_analizi_page = LapAnaliziPage(
             self._session_repo, self._lap_repo, coaching_engine=None, car_setup_repo=self._car_setup_repo
@@ -264,12 +270,10 @@ class MainWindow(QMainWindow):
         """UI dokümanı §2.6: profil var mı yok mu kontrolü."""
         profile = self._profile_repo.get_current()
         if profile is None:
-            logger.info(
-                "Profil bulunamadı — ilk kullanım akışı, Profil sayfasına yönlendiriliyor."
-            )
+            logger.info("No profile found — directing to Profile onboarding page.")
             self._show_profil()
         else:
-            logger.info("Hoş geldin %s — Ana Sayfa'ya yönlendiriliyor.", profile.name)
+            logger.info("Welcome %s — directing to Home page.", profile.name)
             self._show_ana_sayfa()
 
     # ------------------------------------------------------------------
@@ -287,7 +291,13 @@ class MainWindow(QMainWindow):
         self._content_stack.setCurrentIndex(self._page_ana_sayfa)
 
     def _show_f1_25_landing(self) -> None:
-        """F1 25 ikonuna her tıklamada gösterilir; ikincil panel henüz açılmaz."""
+        """F1 25 ikonuna tıklandığında: aktif kayıt varsa canlı ekrana döner, yoksa landing gösterir."""
+        if self._telemetry_receiver.is_running:
+            self._close_all_secondary_panels()
+            self._secondary_panel.open_panel()
+            self._show_canli_session()
+            return
+
         self._close_all_secondary_panels()
         self._content_stack.setCurrentIndex(self._page_f1_25_landing)
 
@@ -302,13 +312,20 @@ class MainWindow(QMainWindow):
         self._content_stack.setCurrentIndex(self._page_ayarlar)
 
     def _show_canli_session(self) -> None:
+        self._secondary_panel.set_active_tab("live")
         self._content_stack.setCurrentIndex(self._page_canli_session)
 
+    def _show_live_dashboard(self) -> None:
+        self._secondary_panel.set_active_tab("dashboard")
+        self._content_stack.setCurrentIndex(self._page_live_dashboard)
+
     def _show_lap_analizi(self) -> None:
+        self._secondary_panel.set_active_tab("analysis")
         self._lap_analizi_page.refresh()
         self._content_stack.setCurrentIndex(self._page_lap_analizi)
 
     def _show_session_gecmisi(self) -> None:
+        self._secondary_panel.set_active_tab("history")
         self._session_gecmisi_page.refresh()
         self._content_stack.setCurrentIndex(self._page_session_gecmisi)
 
@@ -388,29 +405,36 @@ class MainWindow(QMainWindow):
         self._show_ac_live()
 
     def on_f1_25_start_pressed(self) -> None:
-        """F1 25 Landing sayfasındaki "Başla" butonu buraya bağlanır.
-
-        UDP dinlemeyi gerçekten başlatan ilk nokta — bu andan önce hiçbir
-        sistem kaynağı kullanılmaz (UI dokümanı §2.2). Session kaydı boyunca
-        diğer navigasyon kilitlenir — kullanıcının yanlışlıkla başka sayfaya
-        geçip kaydı takip edememesini önlemek için.
-        """
+        """F1 25 Landing sayfasındaki "Başla" butonu buraya bağlanır."""
         self._telemetry_receiver.start()
         self._secondary_panel.open_panel()
         self._canli_session_page.start_monitoring()
-        self._sidebar.set_navigation_locked(True)
-        self._secondary_panel.set_navigation_locked(True)
-        self._show_canli_session()
+        self._sidebar.set_navigation_locked(False)
+        self._secondary_panel.set_navigation_locked(False)
+        self._show_live_dashboard()
 
     def _on_live_session_ended(self) -> None:
         """CanliSessionPage.session_ended sinyali geldiğinde navigasyonun kilidini açar."""
         self._sidebar.set_navigation_locked(False)
         self._secondary_panel.set_navigation_locked(False)
+        self._show_lap_analizi()
+
+    def _open_live_lap_in_analysis(self, lap_number: int) -> None:
+        """Canlı session ekranında bir tura tıklandığında doğrudan o turun analizini açar."""
+        sessions = self._session_repo.get_all()
+        if not sessions:
+            return
+        current_session = sessions[0]
+        self._lap_analizi_page.open_lap(current_session.id, lap_number)
+        self._secondary_panel.open_panel()
+        self._secondary_panel.set_active_tab("analysis")
+        self._content_stack.setCurrentIndex(self._page_lap_analizi)
 
     def _open_session_from_history(self, session_id: int) -> None:
         """Session Geçmişi'nden bir karta tıklanınca o session'ı Lap Analizi'nde açar."""
         self._lap_analizi_page.load_session(session_id)
         self._secondary_panel.open_panel()
+        self._secondary_panel.set_active_tab("analysis")
         self._content_stack.setCurrentIndex(self._page_lap_analizi)
 
     def _open_fsae_session_from_history(self, session_id: int) -> None:
@@ -449,9 +473,9 @@ class MainWindow(QMainWindow):
             adapter = create_ai_adapter(profile.ai_provider, api_key)
             engine = CoachingEngine(self._lap_repo, self._session_repo, adapter, self._car_setup_repo)
             self._lap_analizi_page.set_coaching_engine(engine)
-            logger.info("CoachingEngine kuruldu: provider=%s", profile.ai_provider)
+            logger.info("CoachingEngine initialized: provider=%s", profile.ai_provider)
         except Exception as exc:
-            logger.error("CoachingEngine kurulamadı: %s", exc)
+            logger.error("CoachingEngine failed to initialize: %s", exc)
             self._lap_analizi_page.set_coaching_engine(None)
 
     def _on_settings_saved(self) -> None:

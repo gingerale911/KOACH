@@ -69,7 +69,7 @@ class FSAEImportPage(QWidget):
         layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(16)
 
-        title = QLabel("İçe Aktar")
+        title = QLabel("Import")
         title.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(title)
 
@@ -83,24 +83,24 @@ class FSAEImportPage(QWidget):
 
         # --- Dosya seçimi ---
         file_row = QHBoxLayout()
-        self._select_file_button = QPushButton("Dosya Seç")
+        self._select_file_button = QPushButton("Select File")
         self._select_file_button.setObjectName("PrimaryButton")
         self._select_file_button.clicked.connect(self._on_select_file)
         file_row.addWidget(self._select_file_button)
 
-        self._file_label = QLabel("Henüz dosya seçilmedi")
+        self._file_label = QLabel("No file selected yet")
         self._file_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         file_row.addWidget(self._file_label, stretch=1)
         layout.addLayout(file_row)
 
         # --- Session adı ---
-        layout.addWidget(QLabel("Session Adı"))
+        layout.addWidget(QLabel("Session Name"))
         self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("örn. Endurance - 14.07.2026")
+        self._name_input.setPlaceholderText("e.g. Endurance - 14.07.2026")
         layout.addWidget(self._name_input)
 
         # --- İçe aktar butonu ---
-        self._import_button = QPushButton("İçe Aktar")
+        self._import_button = QPushButton("Import")
         self._import_button.setObjectName("PrimaryButton")
         self._import_button.setEnabled(False)
         self._import_button.clicked.connect(self._on_import)
@@ -123,7 +123,7 @@ class FSAEImportPage(QWidget):
         self._result_detail.setWordWrap(True)
         self._result_detail.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         result_layout.addWidget(self._result_detail)
-        self._go_to_labeling_button = QPushButton("Etiketlemeye Geç")
+        self._go_to_labeling_button = QPushButton("Proceed to Labeling")
         self._go_to_labeling_button.setObjectName("PrimaryButton")
         self._go_to_labeling_button.clicked.connect(self._on_go_to_labeling)
         result_layout.addWidget(self._go_to_labeling_button)
@@ -141,7 +141,7 @@ class FSAEImportPage(QWidget):
         )
 
     def _on_select_file(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "CAN Log Dosyası Seç", "", _LOG_FILE_FILTER)
+        path, _ = QFileDialog.getOpenFileName(self, "Select CAN Log File", "", _LOG_FILE_FILTER)
         if not path:
             return
 
@@ -163,7 +163,7 @@ class FSAEImportPage(QWidget):
         self._pending_session_name = self._name_input.text().strip() or Path(self._selected_file_path).stem
 
         self._status_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
-        self._status_label.setText("Dosya okunuyor... (büyük dosyalarda birkaç saniye sürebilir)")
+        self._status_label.setText("Reading file... (may take a few seconds for large files)")
         self._status_label.show()
         self._result_card.hide()
         self._import_button.setEnabled(False)
@@ -193,7 +193,7 @@ class FSAEImportPage(QWidget):
 
         distinct_ids = len({f.can_id for f in frames})
         self._status_label.hide()
-        self._result_title.setText(f"✓ \"{session.name}\" içe aktarıldı")
+        self._result_title.setText(f"✓ \"{session.name}\" imported")
         self._result_detail.setText(
             f"{len(frames)} ham CAN frame'i, {distinct_ids} farklı CAN ID bulundu. "
             "Kanalları etiketlemek için devam et."
@@ -210,7 +210,7 @@ class FSAEImportPage(QWidget):
 
     def _on_import_worker_failed(self, exc: Exception) -> None:
         logger.error("CAN log içe aktarımı başarısız: %s", exc)
-        self._show_error(f"İşlem başarısız: {exc}")
+        self._show_error(f"Operation failed: {exc}")
         self._select_file_button.setEnabled(True)
 
     def _show_error(self, message: str) -> None:

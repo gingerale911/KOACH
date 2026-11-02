@@ -113,23 +113,23 @@ class FSAELabelingPage(QWidget):
 
         layout = QVBoxLayout(content)
 
-        self._header_label = QLabel("Etiketleme")
+        self._header_label = QLabel("Labeling")
         self._header_label.setObjectName("PrimaryButton")
         self._header_label.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self._header_label)
 
-        self._empty_label = QLabel("Önce İçe Aktar sekmesinden bir CAN log dosyası yükle.")
+        self._empty_label = QLabel("First import a CAN log file from the Import tab.")
         self._empty_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 13px;")
         layout.addWidget(self._empty_label)
 
         # --- Bulunan CAN ID'ler (referans, salt okunur) ---
-        self._ids_label = QLabel("BULUNAN CAN ID'LER")
+        self._ids_label = QLabel("FOUND CAN IDS")
         self._ids_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._ids_label.hide()
         layout.addWidget(self._ids_label)
 
         self._ids_table = QTableWidget(0, 3)
-        self._ids_table.setHorizontalHeaderLabels(["CAN ID", "Frame Sayısı", "Örnek Byte'lar"])
+        self._ids_table.setHorizontalHeaderLabels(["CAN ID", "Frame Count", "Sample Bytes"])
         self._ids_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._ids_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self._ids_table.setMinimumHeight(150)
@@ -138,7 +138,7 @@ class FSAELabelingPage(QWidget):
         layout.addWidget(self._ids_table)
 
         # --- Profil yükleme/kaydetme ---
-        self._profile_section_label = QLabel("ETİKETLEME PROFİLİ")
+        self._profile_section_label = QLabel("LABELING PROFILE")
         self._profile_section_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._profile_section_label.hide()
         layout.addWidget(self._profile_section_label)
@@ -147,17 +147,17 @@ class FSAELabelingPage(QWidget):
         profile_row = QHBoxLayout(self._profile_row_frame)
         profile_row.setContentsMargins(0, 0, 0, 0)
 
-        self._load_profile_button = QPushButton("Profilden Yükle")
+        self._load_profile_button = QPushButton("Load from Profile")
         self._load_profile_button.setObjectName("PrimaryButton")
         self._load_profile_button.clicked.connect(self._on_load_profile)
         profile_row.addWidget(self._load_profile_button)
 
-        self._save_profile_button = QPushButton("Profil Olarak Kaydet")
+        self._save_profile_button = QPushButton("Save as Profile")
         self._save_profile_button.setObjectName("PrimaryButton")
         self._save_profile_button.clicked.connect(self._on_save_profile)
         profile_row.addWidget(self._save_profile_button)
 
-        self._undo_profile_load_button = QPushButton("Son Yüklemeyi Geri Al")
+        self._undo_profile_load_button = QPushButton("Undo Last Profile Load")
         self._undo_profile_load_button.setObjectName("PrimaryButton")
         self._undo_profile_load_button.clicked.connect(self._on_undo_profile_load)
         self._undo_profile_load_button.hide()
@@ -171,7 +171,7 @@ class FSAELabelingPage(QWidget):
         layout.addWidget(self._profile_row_frame)
 
         # --- Yeni kanal ekleme formu ---
-        self._form_label = QLabel("YENİ KANAL EKLE")
+        self._form_label = QLabel("ADD NEW CHANNEL")
         self._form_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._form_label.hide()
         layout.addWidget(self._form_label)
@@ -186,12 +186,12 @@ class FSAELabelingPage(QWidget):
 
         self._start_byte_input = NoScrollSpinBox()
         self._start_byte_input.setRange(0, 7)
-        form_layout.addRow("Başlangıç Byte:", self._start_byte_input)
+        form_layout.addRow("Start Byte:", self._start_byte_input)
 
         self._bit_length_input = NoScrollSpinBox()
         self._bit_length_input.setRange(1, 64)
         self._bit_length_input.setValue(16)
-        form_layout.addRow("Bit Uzunluğu:", self._bit_length_input)
+        form_layout.addRow("Bit Length:", self._bit_length_input)
 
         self._endian_combo = NoScrollComboBox()
         self._endian_combo.addItems(["Little-endian", "Big-endian"])
@@ -202,14 +202,14 @@ class FSAELabelingPage(QWidget):
         )
         form_layout.addRow("Endian:", self._endian_combo)
 
-        self._signed_checkbox = QCheckBox("İşaretli (signed) — negatif değer alabilir")
+        self._signed_checkbox = QCheckBox("Signed — can take negative values")
         form_layout.addRow(self._signed_checkbox)
 
         self._scale_input = NoScrollDoubleSpinBox()
         self._scale_input.setRange(-1_000_000, 1_000_000)
         self._scale_input.setDecimals(4)
         self._scale_input.setValue(1.0)
-        form_layout.addRow("Ölçek (gerçek değer = ham × ölçek + offset):", self._scale_input)
+        form_layout.addRow("Scale (real value = raw × scale + offset):", self._scale_input)
 
         self._offset_input = NoScrollDoubleSpinBox()
         self._offset_input.setRange(-1_000_000, 1_000_000)
@@ -217,14 +217,14 @@ class FSAELabelingPage(QWidget):
         form_layout.addRow("Offset:", self._offset_input)
 
         self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("örn. on_sol_tekerlek_hizi")
-        form_layout.addRow("Kanal Adı:", self._name_input)
+        self._name_input.setPlaceholderText("e.g. front_left_wheel_speed")
+        form_layout.addRow("Channel Name:", self._name_input)
 
         self._unit_input = QLineEdit()
-        self._unit_input.setPlaceholderText("örn. km/s")
-        form_layout.addRow("Birim:", self._unit_input)
+        self._unit_input.setPlaceholderText("e.g. km/h")
+        form_layout.addRow("Unit:", self._unit_input)
 
-        self._add_mapping_button = QPushButton("Ekle")
+        self._add_mapping_button = QPushButton("Add")
         self._add_mapping_button.setObjectName("PrimaryButton")
         self._add_mapping_button.clicked.connect(self._on_add_mapping)
         form_layout.addRow(self._add_mapping_button)
@@ -232,15 +232,15 @@ class FSAELabelingPage(QWidget):
         layout.addWidget(self._form_frame)
 
         # --- Tanımlı kanallar tablosu ---
-        self._mappings_label = QLabel("TANIMLI KANALLAR")
+        self._mappings_label = QLabel("DEFINED CHANNELS")
         self._mappings_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._mappings_label.hide()
         layout.addWidget(self._mappings_label)
 
         self._mappings_table = QTableWidget(0, 9)
         self._mappings_table.setHorizontalHeaderLabels(
-            ["CAN ID", "Başlangıç Byte", "Bit Uzunluğu", "Endian", "İşaretli",
-             "Ölçek", "Offset", "İsim", "Birim"]
+            ["CAN ID", "Start Byte", "Bit Length", "Endian", "Signed",
+             "Scale", "Offset", "Name", "Unit"]
         )
         self._mappings_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._mappings_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -248,13 +248,13 @@ class FSAELabelingPage(QWidget):
         self._mappings_table.hide()
         layout.addWidget(self._mappings_table)
 
-        self._remove_mapping_button = QPushButton("Seçili Kanalı Sil")
+        self._remove_mapping_button = QPushButton("Delete Selected Channel")
         self._remove_mapping_button.setObjectName("PrimaryButton")
         self._remove_mapping_button.clicked.connect(self._on_remove_selected_mapping)
         self._remove_mapping_button.hide()
         layout.addWidget(self._remove_mapping_button)
 
-        self._decode_button = QPushButton("Kaydet ve Çözümle")
+        self._decode_button = QPushButton("Save and Decode")
         self._decode_button.setObjectName("PrimaryButton")
         self._decode_button.clicked.connect(self._on_decode)
         self._decode_button.hide()
@@ -279,7 +279,7 @@ class FSAELabelingPage(QWidget):
             return
 
         self._current_session = session
-        self._header_label.setText(f"Etiketleme — {session.name} (yükleniyor...)")
+        self._header_label.setText(f"Labeling — {session.name} (loading...)")
         self._empty_label.hide()
         for widget in (
             self._ids_label, self._ids_table, self._profile_section_label, self._profile_row_frame,
@@ -305,7 +305,7 @@ class FSAELabelingPage(QWidget):
         self._last_profile_load_mappings = []
         self._undo_profile_load_button.hide()
 
-        self._header_label.setText(f"Etiketleme — {self._current_session.name}")
+        self._header_label.setText(f"Labeling — {self._current_session.name}")
         for widget in (
             self._ids_label, self._ids_table, self._profile_section_label, self._profile_row_frame,
             self._form_label, self._form_frame, self._mappings_label, self._mappings_table,
@@ -315,7 +315,7 @@ class FSAELabelingPage(QWidget):
 
     def _on_raw_frames_load_failed(self, exc: Exception) -> None:
         logger.error("Ham CAN verisi yüklenemedi: %s", exc)
-        notify(self, "Yükleme hatası", f"Ham CAN verisi okunamadı: {exc}")
+        notify(self, "Loading Error", f"Failed to read raw CAN data: {exc}")
         self._show_empty_state()
 
     def _show_empty_state(self) -> None:
@@ -358,12 +358,12 @@ class FSAELabelingPage(QWidget):
         try:
             can_id = _parse_can_id(self._can_id_input.text())
         except ValueError:
-            notify(self, "Geçersiz CAN ID", "CAN ID '0x123' ya da '291' formatında olmalı.")
+            notify(self, "Invalid CAN ID", "CAN ID must be in '0x123' or '291' format.")
             return
 
         name = self._name_input.text().strip()
         if not name:
-            notify(self, "İsim eksik", "Kanal için bir isim girmelisin.")
+            notify(self, "Missing Name", "You must enter a channel name.")
             return
 
         mapping = ChannelMapping(
@@ -411,7 +411,7 @@ class FSAELabelingPage(QWidget):
                 str(mapping.start_byte),
                 str(mapping.bit_length),
                 "Little" if mapping.little_endian else "Big",
-                "Evet" if mapping.signed else "Hayır",
+                "Yes" if mapping.signed else "No",
                 f"{mapping.scale:g}",
                 f"{mapping.offset:g}",
                 mapping.name,
@@ -430,7 +430,7 @@ class FSAELabelingPage(QWidget):
         if self._current_session is None or self._raw_frames_df is None:
             return
         if not self._mappings:
-            notify(self, "Kanal yok", "Çözümlemeden önce en az bir kanal tanımlamalısın.")
+            notify(self, "No Channels", "Define at least one channel before decoding.")
             return
 
         for mapping in self._mappings:
@@ -462,7 +462,7 @@ class FSAELabelingPage(QWidget):
         )
 
         notify(
-            self, "Etiketleme Tamamlandı",
+            self, "Labeling Complete",
             f"✓ {len(points)} veri noktası, {distinct_channels} kanal çözümlendi. "
             "Bu session artık Video + Pist Takip uygulamasında kullanılabilir.",
         )
@@ -474,7 +474,7 @@ class FSAELabelingPage(QWidget):
 
         profiles = self._profile_repo.get_all_profiles()
         if not profiles:
-            notify(self, "Profil yok", "Henüz kaydedilmiş bir etiketleme profili yok.")
+            notify(self, "No Profiles", "No saved labeling profiles exist yet.")
             return
 
         profile = pick_profile(self, profiles)
@@ -496,25 +496,25 @@ class FSAELabelingPage(QWidget):
 
         self._profile_status_label.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px;")
         self._profile_status_label.setText(
-            f"✓ \"{profile.name}\" profilinden {len(new_mappings)} kanal otomatik dolduruldu."
+            f"✓ Auto-filled {len(new_mappings)} channels from profile \"{profile.name}\"."
         )
 
         if new_mappings:
-            self._undo_profile_load_button.setText(f"Son Yüklemeyi Geri Al ({len(new_mappings)} kanal)")
+            self._undo_profile_load_button.setText(f"Undo Last Profile Load ({len(new_mappings)} channels)")
             self._undo_profile_load_button.show()
         else:
             self._undo_profile_load_button.hide()
 
     def _on_save_profile(self) -> None:
         if not self._mappings:
-            notify(self, "Kanal yok", "Kaydetmeden önce en az bir kanal tanımlamalısın.")
+            notify(self, "No Channels", "Kaydetmeden önce en az bir kanal tanımlamalısın.")
             return
 
-        name = prompt_text(self, "Profil Olarak Kaydet", "Profil adı:")
+        name = prompt_text(self, "Save as Profile", "Profile name:")
         if name is None:
             return
         if not name:
-            notify(self, "İsim eksik", "Profil için bir isim girmelisin.")
+            notify(self, "Missing Name", "Profil için bir isim girmelisin.")
             return
 
         existing = next(
@@ -535,7 +535,7 @@ class FSAELabelingPage(QWidget):
         self._profile_repo.replace_entries(profile.id, entries)
 
         self._profile_status_label.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px;")
-        self._profile_status_label.setText(f"✓ \"{profile.name}\" profili {len(entries)} kanalla kaydedildi.")
+        self._profile_status_label.setText(f"✓ Profile \"{profile.name}\" saved with {len(entries)} channels.")
 
     def _on_undo_profile_load(self) -> None:
         """Son 'Profilden Yükle' işleminde eklenen kanalların TAMAMINI kaldırır.
@@ -552,7 +552,7 @@ class FSAELabelingPage(QWidget):
         self._refresh_mappings_table()
 
         self._profile_status_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
-        self._profile_status_label.setText(f"↩ Profilden gelen {removed_count} kanal geri alındı.")
+        self._profile_status_label.setText(f"↩ Reverted {removed_count} channels from profile.")
 
         self._clear_profile_load_undo_state()
 

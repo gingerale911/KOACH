@@ -26,7 +26,7 @@ def _build_figure(traces_per_row: list[list[go.Scatter]], row_titles: list[str])
     for row_idx, traces in enumerate(traces_per_row, start=1):
         for trace in traces:
             fig.add_trace(trace, row=row_idx, col=1)
-    fig.update_xaxes(title_text="Pist Pozisyonu", row=len(row_titles), col=1)
+    fig.update_xaxes(title_text="Track Position", row=len(row_titles), col=1)
     fig.update_layout(
         height=650, showlegend=True,
         margin=dict(l=40, r=20, t=40, b=40),
@@ -41,10 +41,10 @@ def build_single_lap_html(telemetry_df: pd.DataFrame, lap_label: str) -> str:
 
     speed_trace = [go.Scatter(x=x, y=telemetry_df["speed"], name=f"{lap_label} — Hız", line=dict(color=_PURPLE))]
     throttle_brake_traces = [
-        go.Scatter(x=x, y=telemetry_df["throttle"] * 100, name="Gaz %", line=dict(color="#2ecc71")),
-        go.Scatter(x=x, y=telemetry_df["brake"] * 100, name="Fren %", line=dict(color="#e74c3c")),
+        go.Scatter(x=x, y=telemetry_df["throttle"] * 100, name="Throttle %", line=dict(color="#2ecc71")),
+        go.Scatter(x=x, y=telemetry_df["brake"] * 100, name="Brake %", line=dict(color="#e74c3c")),
     ]
-    gear_trace = [go.Scatter(x=x, y=telemetry_df["gear"], name="Vites", line=dict(color="#f1c40f", shape="hv"))]
+    gear_trace = [go.Scatter(x=x, y=telemetry_df["gear"], name="Gear", line=dict(color="#f1c40f", shape="hv"))]
 
     fig = _build_figure(
         [speed_trace, throttle_brake_traces, gear_trace],

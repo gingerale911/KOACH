@@ -34,12 +34,12 @@ def prompt_text(parent, title: str, label: str, initial_text: str = "") -> str |
     button_row = QHBoxLayout()
     button_row.addStretch(1)
 
-    cancel_button = QPushButton("Vazgeç")
+    cancel_button = QPushButton("Cancel")
     cancel_button.setObjectName("PrimaryButton")
     cancel_button.clicked.connect(dialog.reject)
     button_row.addWidget(cancel_button)
 
-    ok_button = QPushButton("Tamam")
+    ok_button = QPushButton("OK")
     ok_button.setObjectName("PrimaryButton")
     ok_button.setDefault(True)
     ok_button.clicked.connect(dialog.accept)

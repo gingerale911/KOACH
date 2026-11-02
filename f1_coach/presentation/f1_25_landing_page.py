@@ -87,12 +87,12 @@ class F1_25LandingPage(QWidget):
         badge_wrapper.addWidget(self._badge, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addLayout(badge_wrapper)
 
-        title = QLabel("F1 25 Koçluğu")
+        title = QLabel("F1 25 Coaching")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 32px; font-weight: 800;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Telemetri verisini gerçek zamanlı kaydet, AI destekli analizle sürüşünü bir üst seviyeye taşı.")
+        subtitle = QLabel("Record telemetry in real time and elevate your driving with AI-powered analysis.")
         subtitle.setWordWrap(True)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 14px;")

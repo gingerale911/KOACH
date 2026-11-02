@@ -138,7 +138,7 @@ def _make_session_row(session) -> QFrame:  # type: ignore[no-untyped-def]
     best_label.setStyleSheet(f"color: { theme_module.GREEN}; font-size: 13px; font-weight: 600; background: transparent; border: none;")
     layout.addWidget(best_label)
 
-    laps_label = QLabel(f"{session.lap_count} tur")
+    laps_label = QLabel(f"{session.lap_count} laps")
     laps_label.setStyleSheet(f"color: { theme_module.TEXT_SECONDARY}; font-size: 12px; background: transparent; border: none;")
     layout.addWidget(laps_label)
 
@@ -173,7 +173,7 @@ def _make_fsae_session_row(session) -> QFrame:  # type: ignore[no-untyped-def]
     name_label.setStyleSheet("font-weight: 600; font-size: 13px; background: transparent; border: none;")
     layout.addWidget(name_label, stretch=1)
 
-    status_text = "Etiketlendi" if session.is_labeled else "Etiketleme bekliyor"
+    status_text = "Labeled" if session.is_labeled else "Pending labeling"
     status_label = QLabel(status_text)
     status_label.setStyleSheet(
         f"color: {status_color}; font-size: 12px; font-weight: 600; background: transparent; border: none;"
@@ -190,7 +190,7 @@ def _make_fsae_session_row(session) -> QFrame:  # type: ignore[no-untyped-def]
     delete_button.setIconSize(QSize(14, 14)) 
     delete_button.setObjectName("PrimaryButton")
     delete_button.setFixedSize(27, 27)
-    delete_button.setToolTip("Session'ı sil")
+    delete_button.setToolTip("Delete session")
     delete_button.clicked.connect(lambda: row.delete_clicked.emit(session.id))
     layout.addWidget(delete_button)
 
@@ -249,8 +249,8 @@ class AnaSayfaPage(QWidget):
 
         # --- AI yapılandırma banner'ı ---
         self._ai_banner = WarningBanner(
-            "AI koçluk analizi için henüz bir sağlayıcı yapılandırılmadı.",
-            "Ayarlar'a Git",
+            "No provider configured yet for AI coaching analysis.",
+            "Go to Settings",
         )
         self._ai_banner.action_clicked.connect(self.settings_requested.emit)
         self._layout.addWidget(self._ai_banner)
@@ -260,7 +260,7 @@ class AnaSayfaPage(QWidget):
         self._layout.addLayout(self._features_row)
 
         # --- Son session'lar ---
-        self.f125_sessions_header = QLabel("SON F1 25 SESSION'LARI")
+        self.f125_sessions_header = QLabel("RECENT F1 25 SESSIONS")
         self.f125_sessions_header.setStyleSheet(
             f"color: { theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;"
         )
@@ -270,7 +270,7 @@ class AnaSayfaPage(QWidget):
         self._sessions_container.setSpacing(8)
         self._layout.addLayout(self._sessions_container)
 
-        self._fsae_sessions_header = QLabel("SON FSAE SESSION'LARI")
+        self._fsae_sessions_header = QLabel("RECENT FSAE SESSIONS")
         self._fsae_sessions_header.setStyleSheet(
             f"color: { theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;"
         )
@@ -293,8 +293,8 @@ class AnaSayfaPage(QWidget):
 
     def _update_greeting(self) -> None:
         profile = self._profile_repo.get_current()
-        name = profile.name if profile else "Sürücü"
-        self._greeting_label.setText(f"Hoş geldin, {name} 👋")
+        name = profile.name if profile else "Driver"
+        self._greeting_label.setText(f"Welcome, {name} 👋")
 
 
     def _update_ai_banner(self) -> None:
@@ -306,7 +306,7 @@ class AnaSayfaPage(QWidget):
 
     def _update_recent_f125_sessions(self) -> None:
         sessions = self._vehicle_session_repo.get_all()
-        self._fsae_sessions_header.setText(f"SON F1 25 SESSION'LARI ({len(sessions)})")
+        self.f125_sessions_header.setText(f"RECENT F1 25 SESSIONS ({len(sessions)})")
 
         while self._sessions_container.count():
             item = self._sessions_container.takeAt(0)
@@ -322,7 +322,7 @@ class AnaSayfaPage(QWidget):
             )
             empty_layout = QVBoxLayout(empty)
             empty_layout.setContentsMargins(24, 32, 24, 32)
-            title = QLabel("Henüz session yok")
+            title = QLabel("No sessions yet")
             title.setAlignment(Qt.AlignmentFlag.AlignCenter)
             title.setStyleSheet("font-size: 14px; font-weight: 500; background: transparent;")
             empty_layout.addWidget(title)
@@ -346,7 +346,7 @@ class AnaSayfaPage(QWidget):
 
     def _update_recent_fsae_sessions(self) -> None:
         sessions = self._vehicle_session_repo.get_all()
-        self._fsae_sessions_header.setText(f"SON FSAE SESSION'LARI ({len(sessions)})")
+        self._fsae_sessions_header.setText(f"RECENT FSAE SESSIONS ({len(sessions)})")
 
         while self._fsae_sessions_container.count():
             item = self._fsae_sessions_container.takeAt(0)
@@ -361,7 +361,7 @@ class AnaSayfaPage(QWidget):
             )
             empty_layout = QVBoxLayout(empty)
             empty_layout.setContentsMargins(24, 32, 24, 32)
-            title = QLabel("Henüz FSAE session'ı yok")
+            title = QLabel("No FSAE sessions yet")
             title.setAlignment(Qt.AlignmentFlag.AlignCenter)
             title.setStyleSheet("font-size: 14px; font-weight: 500; background: transparent;")
             empty_layout.addWidget(title)
@@ -393,7 +393,7 @@ class AnaSayfaPage(QWidget):
         silme akışıyla aynı sorumluluk ayrımı.
         """
         if not confirm(
-        self, "Emin misin?",
+        self, "Are you sure?",
         "Bu FSAE session'ı ve tüm etiketleme/telemetri verileri kalıcı olarak "
         "silinecek. Devam edilsin mi?",
         ):

@@ -19,12 +19,12 @@ def _make_placeholder(title: str) -> QWidget:
 
 
 def make_ac_live_placeholder() -> QWidget:
-    return _make_placeholder("Canlı Bağlantı (yapım aşamasında)")
+    return _make_placeholder("Live Connection (Under Construction)")
 
 
 def make_ac_lap_analizi_placeholder() -> QWidget:
-    return _make_placeholder("Lap Analizi (yapım aşamasında)")
+    return _make_placeholder("Lap Analysis (Under Construction)")
 
 
 def make_ac_session_gecmisi_placeholder() -> QWidget:
-    return _make_placeholder("Session Geçmişi (yapım aşamasında)")
+    return _make_placeholder("Session History (Under Construction)")

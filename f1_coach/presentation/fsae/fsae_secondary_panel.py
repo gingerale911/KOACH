@@ -31,12 +31,12 @@ class FSAESecondaryPanel(QWidget):
         layout.setContentsMargins(16, 8, 16, 8)
         layout.setSpacing(8)
 
-        self._import_button = QPushButton("İçe Aktar")
+        self._import_button = QPushButton("Import")
         self._import_button.setObjectName("PrimaryButton")
         self._import_button.clicked.connect(self.import_clicked.emit)
         layout.addWidget(self._import_button)
 
-        self._labeling_button = QPushButton("Etiketleme")
+        self._labeling_button = QPushButton("Labeling")
         self._labeling_button.setObjectName("PrimaryButton")
         self._labeling_button.clicked.connect(self.labeling_clicked.emit)
         layout.addWidget(self._labeling_button)

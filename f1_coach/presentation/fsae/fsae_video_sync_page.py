@@ -87,22 +87,22 @@ class FSAEVideoSyncPage(QWidget):
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
 
-        self._header_label = QLabel("Video & Senkron")
+        self._header_label = QLabel("Video & Sync")
         self._header_label.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self._header_label)
 
-        self._empty_label = QLabel("Önce Session Seç sekmesinden bir session seç.")
+        self._empty_label = QLabel("Select a session from the Select Session tab first.")
         self._empty_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 13px;")
         layout.addWidget(self._empty_label)
 
         # --- Video dosyası seçimi ---
         video_file_row = QHBoxLayout()
-        self._select_video_button = QPushButton("Video Dosyası Seç")
+        self._select_video_button = QPushButton("Select Video File")
         self._select_video_button.setObjectName("PrimaryButton")
         self._select_video_button.clicked.connect(self._on_select_video)
         video_file_row.addWidget(self._select_video_button)
 
-        self._video_file_label = QLabel("Henüz video seçilmedi")
+        self._video_file_label = QLabel("No video selected yet")
         self._video_file_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
         video_file_row.addWidget(self._video_file_label, stretch=1)
         self._video_file_row_frame = QFrame()
@@ -122,7 +122,7 @@ class FSAEVideoSyncPage(QWidget):
         self._player.setVideoOutput(self._video_widget)
 
         transport_row = QHBoxLayout()
-        self._play_pause_button = QPushButton("▶ Oynat")
+        self._play_pause_button = QPushButton("▶ Play")
         self._play_pause_button.setObjectName("PrimaryButton")
         self._play_pause_button.clicked.connect(self._on_toggle_play)
         transport_row.addWidget(self._play_pause_button)
@@ -144,29 +144,29 @@ class FSAEVideoSyncPage(QWidget):
         self._player.durationChanged.connect(self._on_duration_changed)
 
         # --- Senkron işaretleme ---
-        self._sync_label = QLabel("SENKRON NOKTASI")
+        self._sync_label = QLabel("SYNC POINT")
         self._sync_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._sync_label.hide()
         layout.addWidget(self._sync_label)
 
         sync_row = QHBoxLayout()
-        self._mark_video_button = QPushButton("Video Konumunu İşaretle")
+        self._mark_video_button = QPushButton("Mark Video Position")
         self._mark_video_button.setObjectName("PrimaryButton")
         self._mark_video_button.clicked.connect(self._on_mark_video_position)
         sync_row.addWidget(self._mark_video_button)
 
-        self._video_sync_value_label = QLabel("Video zamanı: —")
+        self._video_sync_value_label = QLabel("Video time: —")
         self._video_sync_value_label.setStyleSheet("font-weight: 600; font-size: 12px;")
         sync_row.addWidget(self._video_sync_value_label)
 
         sync_row.addSpacing(20)
-        sync_row.addWidget(QLabel("Telemetri zamanı (s):"))
+        sync_row.addWidget(QLabel("Telemetry time (s):"))
         self._telemetry_sync_input = NoScrollDoubleSpinBox()
         self._telemetry_sync_input.setRange(0, 100_000)
         self._telemetry_sync_input.setDecimals(3)
         sync_row.addWidget(self._telemetry_sync_input)
 
-        self._calculate_button = QPushButton("Senkronu Hesapla ve Kaydet")
+        self._calculate_button = QPushButton("Calculate and Save Sync")
         self._calculate_button.setObjectName("PrimaryButton")
         self._calculate_button.clicked.connect(self._on_calculate_sync)
         sync_row.addWidget(self._calculate_button)
@@ -181,7 +181,7 @@ class FSAEVideoSyncPage(QWidget):
         layout.addWidget(self._sync_status_label)
 
         # --- Referans için telemetri grafiği ---
-        self._chart_label = QLabel("TELEMETRİ (senkron noktasını bulmak için grafiğe tıkla)")
+        self._chart_label = QLabel("TELEMETRY (click on chart to select sync point)")
         self._chart_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
         self._chart_label.hide()
         layout.addWidget(self._chart_label)
@@ -216,10 +216,10 @@ class FSAEVideoSyncPage(QWidget):
         self._current_session = session
         self._telemetry_df = None
         self._video_sync_seconds = None
-        self._video_sync_value_label.setText("Video zamanı: —")
+        self._video_sync_value_label.setText("Video time: —")
         self._sync_status_label.setText("")
 
-        self._header_label.setText(f"Video & Senkron — {session.name} (telemetri yükleniyor...)")
+        self._header_label.setText(f"Video & Sync — {session.name} (loading telemetry...)")
         self._set_empty_state(False)
         self._set_loaded_content_enabled(False)
 
@@ -230,7 +230,7 @@ class FSAEVideoSyncPage(QWidget):
 
     def _on_telemetry_loaded(self, df) -> None:
         self._telemetry_df = df
-        self._header_label.setText(f"Video & Senkron — {self._current_session.name}")
+        self._header_label.setText(f"Video & Sync — {self._current_session.name}")
 
         channels = sorted(self._telemetry_df["channel_name"].unique())
         self._channel_list.blockSignals(True)
@@ -245,7 +245,7 @@ class FSAEVideoSyncPage(QWidget):
         if self._current_session.video_file and Path(self._current_session.video_file).exists():
             self._load_video(self._current_session.video_file)
         else:
-            self._video_file_label.setText("Henüz video seçilmedi")
+            self._video_file_label.setText("No video selected yet")
             self._video_widget.hide()
             self._transport_row_frame.hide()
 
@@ -254,7 +254,7 @@ class FSAEVideoSyncPage(QWidget):
 
     def _on_telemetry_load_failed(self, exc: Exception) -> None:
         logger.error("FSAE telemetri verisi yüklenemedi: %s", exc)
-        notify(self, "Yükleme hatası", f"Telemetri verisi okunamadı: {exc}")
+        notify(self, "Loading Error", f"Failed to read telemetry data: {exc}")
         self._set_empty_state(True)
 
     def _set_empty_state(self, empty: bool) -> None:
@@ -288,7 +288,7 @@ class FSAEVideoSyncPage(QWidget):
         if self._current_session is None:
             return
         path, _ = QFileDialog.getOpenFileName(
-            self, "Video Dosyası Seç", "", "Video Dosyaları (*.mp4 *.mov *.avi *.mkv);;Tüm Dosyalar (*)"
+            self, "Select Video File", "", "Video Files (*.mp4 *.mov *.avi *.mkv);;All Files (*)"
         )
         if not path:
             return
@@ -306,10 +306,10 @@ class FSAEVideoSyncPage(QWidget):
     def _on_toggle_play(self) -> None:
         if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self._player.pause()
-            self._play_pause_button.setText("▶ Oynat")
+            self._play_pause_button.setText("▶ Play")
         else:
             self._player.play()
-            self._play_pause_button.setText("⏸ Duraklat")
+            self._play_pause_button.setText("⏸ Pause")
 
     def _on_slider_moved(self, value: int) -> None:
         self._player.setPosition(value)
@@ -330,15 +330,15 @@ class FSAEVideoSyncPage(QWidget):
     def _on_mark_video_position(self) -> None:
         position_seconds = self._player.position() / 1000.0
         self._video_sync_seconds = position_seconds
-        self._video_sync_value_label.setText(f"Video zamanı: {_format_seconds(position_seconds)}")
+        self._video_sync_value_label.setText(f"Video time: {_format_seconds(position_seconds)}")
 
     def _on_calculate_sync(self) -> None:
         if self._current_session is None:
             return
         if self._video_sync_seconds is None:
             notify(
-                self, "Video konumu işaretlenmedi",
-                "Önce videoyu ilgili kareye getirip 'Video Konumunu İşaretle'ye bas.",
+                self, "Video position not marked",
+                "Seek the video to the desired frame and click 'Mark Video Position' first.",
             )
             return
 
@@ -349,7 +349,7 @@ class FSAEVideoSyncPage(QWidget):
         self._session_repo.save(self._current_session)
 
         self._sync_status_label.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px;")
-        self._sync_status_label.setText(f"✓ Senkron kaydedildi. Ofset: {offset:+.3f} s")
+        self._sync_status_label.setText(f"✓ Sync saved. Offset: {offset:+.3f} s")
 
         logger.info(
             "FSAE video senkron kaydedildi: session_id=%d offset=%.3f",
@@ -397,7 +397,7 @@ class FSAEVideoSyncPage(QWidget):
         widget'ın görünürlüğü oynatmayı otomatik durdurmuyor."""
         if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self._player.pause()
-            self._play_pause_button.setText("▶ Oynat")
+            self._play_pause_button.setText("▶ Play")
         super().hideEvent(event)
 
     def _on_chart_point_clicked(self, x_value: float) -> None:
@@ -406,4 +406,4 @@ class FSAEVideoSyncPage(QWidget):
         kalmaz."""
         self._telemetry_sync_input.setValue(x_value)
         self._sync_status_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px;")
-        self._sync_status_label.setText(f"Grafikten seçildi: telemetri zamanı = {x_value:.3f} s")
+        self._sync_status_label.setText(f"Selected from chart: telemetry time = {x_value:.3f} s")

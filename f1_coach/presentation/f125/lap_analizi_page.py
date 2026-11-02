@@ -53,33 +53,33 @@ from f1_coach.presentation.f125.charts.plotly_chart_widget import PlotlyChartWid
 logger = get_logger(__name__)
 
 _SETUP_FIELD_LABELS: list[tuple[str, str]] = [
-    ("front_wing", "Ön Kanat"),
-    ("rear_wing", "Arka Kanat"),
-    ("on_throttle_diff", "Diferansiyel (Gazlı) %"),
-    ("off_throttle_diff", "Diferansiyel (Gazsız) %"),
-    ("front_camber", "Ön Kamber"),
-    ("rear_camber", "Arka Kamber"),
-    ("front_toe", "Ön Toe"),
-    ("rear_toe", "Arka Toe"),
-    ("front_suspension", "Ön Süspansiyon"),
-    ("rear_suspension", "Arka Süspansiyon"),
-    ("front_arb", "Ön Anti-Roll Bar"),
-    ("rear_arb", "Arka Anti-Roll Bar"),
-    ("front_ride_height", "Ön Yerden Yükseklik"),
-    ("rear_ride_height", "Arka Yerden Yükseklik"),
-    ("brake_pressure", "Fren Basıncı %"),
-    ("brake_bias", "Fren Dengesi (Ön) %"),
-    ("front_left_tyre_pressure", "Ön Sol Lastik Basıncı (PSI)"),
-    ("front_right_tyre_pressure", "Ön Sağ Lastik Basıncı (PSI)"),
-    ("rear_left_tyre_pressure", "Arka Sol Lastik Basıncı (PSI)"),
-    ("rear_right_tyre_pressure", "Arka Sağ Lastik Basıncı (PSI)"),
-    ("ballast", "Balast"),
-    ("fuel_load", "Yakıt Yükü (kg)"),
+    ("front_wing", "Front Wing"),
+    ("rear_wing", "Rear Wing"),
+    ("on_throttle_diff", "On-Throttle Diff %"),
+    ("off_throttle_diff", "Off-Throttle Diff %"),
+    ("front_camber", "Front Camber"),
+    ("rear_camber", "Rear Camber"),
+    ("front_toe", "Front Toe"),
+    ("rear_toe", "Rear Toe"),
+    ("front_suspension", "Front Suspension"),
+    ("rear_suspension", "Rear Suspension"),
+    ("front_arb", "Front Anti-Roll Bar"),
+    ("rear_arb", "Rear Anti-Roll Bar"),
+    ("front_ride_height", "Front Ride Height"),
+    ("rear_ride_height", "Rear Ride Height"),
+    ("brake_pressure", "Brake Pressure %"),
+    ("brake_bias", "Front Brake Bias %"),
+    ("front_left_tyre_pressure", "Front Left Tyre Pressure (PSI)"),
+    ("front_right_tyre_pressure", "Front Right Tyre Pressure (PSI)"),
+    ("rear_left_tyre_pressure", "Rear Left Tyre Pressure (PSI)"),
+    ("rear_right_tyre_pressure", "Rear Right Tyre Pressure (PSI)"),
+    ("ballast", "Ballast"),
+    ("fuel_load", "Fuel Load (kg)"),
 ]
 
 
 def _setup_label(setup: CarSetup) -> str:
-    return f"Tur {setup.valid_from_lap}'den itibaren"
+    return f"From Lap {setup.valid_from_lap} onwards"
 
 
 def _format_setup_value(value: float | int) -> str:
@@ -93,21 +93,44 @@ def _format_time(seconds: float) -> str:
 
 
 class LapTableWidget(QWidget):
-    """Katman 1 — sektör tablosu.
+    """Layer 1 — Sector and lap summary table.
 
     Signals:
-        lap_selected: Bir tura tıklandı, lap_number taşır.
+        lap_selected: Emitted when a lap row is clicked (carries lap_number).
+        refresh_requested: Emitted when the driver clicks the refresh button.
     """
 
     lap_selected = pyqtSignal(int)
+    refresh_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
+
+        top_bar = QHBoxLayout()
+        self._title_label = QLabel("Session Laps")
+        self._title_label.setStyleSheet("font-size: 16px; font-weight: 700;")
+        top_bar.addWidget(self._title_label)
+
+        self._hint_label = QLabel("(click any row to view detailed telemetry graphs)")
+        self._hint_label.setStyleSheet(f"font-size: 12px; color: {TEXT_SECONDARY};")
+        top_bar.addWidget(self._hint_label)
+        top_bar.addStretch(1)
+
+        self._refresh_button = QPushButton("🔄 Refresh")
+        self._refresh_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._refresh_button.setStyleSheet("font-size: 12px; padding: 4px 12px;")
+        self._refresh_button.clicked.connect(self.refresh_requested.emit)
+        top_bar.addWidget(self._refresh_button)
+        layout.addLayout(top_bar)
+
         self._table = QTableWidget(0, 5)
-        self._table.setHorizontalHeaderLabels(["Tur", "S1", "S2", "S3", "Toplam"])
+        self._table.setHorizontalHeaderLabels(["Lap", "S1", "S2", "S3", "Total"])
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._table.setCursor(Qt.CursorShape.PointingHandCursor)
         self._table.cellClicked.connect(self._on_cell_clicked)
         self._table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
@@ -138,19 +161,27 @@ class LapTableWidget(QWidget):
                 if not lap.is_valid:
                     item.setForeground(Qt.GlobalColor.gray)
                 elif lap.lap_number == best_lap_number:
-                    item.setBackground(Qt.GlobalColor.transparent)
-                    item.setForeground(Qt.GlobalColor.white)
                     item.setBackground(_purple_highlight())
+                    item.setForeground(Qt.GlobalColor.white)
                 self._table.setItem(row, col, item)
 
-            # Sektör bazlı mor vurgu (satır geneli mor değilse bile)
+            # Highlight best sector times in purple
             if lap.is_valid_reference:
                 if best_s1 is not None and lap.sector_1_time == best_s1:
-                    item.setBackground(_purple_highlight())
+                    s1_item = self._table.item(row, 1)
+                    if s1_item:
+                        s1_item.setBackground(_purple_highlight())
+                        s1_item.setForeground(Qt.GlobalColor.white)
                 if best_s2 is not None and lap.sector_2_time == best_s2:
-                    item.setBackground(_purple_highlight())
+                    s2_item = self._table.item(row, 2)
+                    if s2_item:
+                        s2_item.setBackground(_purple_highlight())
+                        s2_item.setForeground(Qt.GlobalColor.white)
                 if best_s3 is not None and lap.sector_3_time == best_s3:
-                    item.setBackground(_purple_highlight())
+                    s3_item = self._table.item(row, 3)
+                    if s3_item:
+                        s3_item.setBackground(_purple_highlight())
+                        s3_item.setForeground(Qt.GlobalColor.white)
 
     def _on_cell_clicked(self, row: int, _column: int) -> None:
         if 0 <= row < len(self._laps):
@@ -158,8 +189,8 @@ class LapTableWidget(QWidget):
 
 
 def _purple_highlight() -> QColor:
-    """Sektör/tur en iyi rengi — %28 opaklıkta mor vurgu."""
-    return QColor(155, 48, 255, 70)  # #9B30FF, alpha≈70/255
+    """Best sector / lap highlight color."""
+    return QColor(155, 48, 255, 120)
 
 
 class LapDetailWidget(QWidget):
@@ -191,7 +222,7 @@ class LapDetailWidget(QWidget):
         layout = QVBoxLayout(self)
 
         header_row = QHBoxLayout()
-        self._back_button = QPushButton("← Geri")
+        self._back_button = QPushButton("← Back")
         self._back_button.clicked.connect(self.back_pressed.emit)
         header_row.addWidget(self._back_button)
         self._header_label = QLabel("")
@@ -212,7 +243,7 @@ class LapDetailWidget(QWidget):
         self._single_chart.setFixedHeight(650)
         single_layout.addWidget(self._single_chart)
 
-        self._single_ai_button = QPushButton("AI Analizi Oluştur")
+        self._single_ai_button = QPushButton("Generate AI Analysis")
         self._single_ai_button.clicked.connect(self._on_generate_single_feedback)
         single_layout.addWidget(self._single_ai_button)
 
@@ -221,7 +252,7 @@ class LapDetailWidget(QWidget):
         self._single_feedback_text.setMaximumHeight(160)
         single_layout.addWidget(self._single_feedback_text)
 
-        self._tabs.addTab(single_scroll, "Tek Lap Analizi")
+        self._tabs.addTab(single_scroll, "Single Lap Analysis")
 
         # --- Sekme 2: Karşılaştırmalı Lap Analizi (tüm sayfa kaydırılabilir) ---
         compare_scroll = QScrollArea()
@@ -231,7 +262,7 @@ class LapDetailWidget(QWidget):
         compare_layout = QVBoxLayout(compare_content)
 
         compare_row = QHBoxLayout()
-        compare_row.addWidget(QLabel("Karşılaştırılacak tur:"))
+        compare_row.addWidget(QLabel("Compare with lap:"))
         self._compare_combo = QComboBox()
         self._compare_combo.currentIndexChanged.connect(self._on_compare_lap_changed)
         compare_row.addWidget(self._compare_combo)
@@ -241,7 +272,7 @@ class LapDetailWidget(QWidget):
         self._compare_chart.setFixedHeight(650)
         compare_layout.addWidget(self._compare_chart)
 
-        self._track_map_label = QLabel("Pist Haritası (Demo)")
+        self._track_map_label = QLabel("Track Map")
         self._track_map_label.setStyleSheet("font-size: 12px; font-weight: 600; margin-top: 8px;")
         compare_layout.addWidget(self._track_map_label)
 
@@ -249,7 +280,7 @@ class LapDetailWidget(QWidget):
         self._track_map_chart.setFixedHeight(550)
         compare_layout.addWidget(self._track_map_chart)
 
-        self._compare_ai_button = QPushButton("AI Karşılaştırma Analizi Oluştur")
+        self._compare_ai_button = QPushButton("Generate AI Comparison Analysis")
         self._compare_ai_button.clicked.connect(self._on_generate_comparison_feedback)
         compare_layout.addWidget(self._compare_ai_button)
 
@@ -258,7 +289,7 @@ class LapDetailWidget(QWidget):
         self._compare_feedback_text.setMaximumHeight(160)
         compare_layout.addWidget(self._compare_feedback_text)
 
-        self._tabs.addTab(compare_scroll, "Karşılaştırmalı Lap Analizi")
+        self._tabs.addTab(compare_scroll, "Comparative Lap Analysis")
 
     # --- Sekme 3: Setup Analizi (tüm sayfa kaydırılabilir) ---
         setup_scroll = QScrollArea()
@@ -268,14 +299,14 @@ class LapDetailWidget(QWidget):
         setup_layout = QVBoxLayout(setup_content)
 
         primary_row = QHBoxLayout()
-        primary_row.addWidget(QLabel("Bu session'daki setup:"))
+        primary_row.addWidget(QLabel("Setup in this session:"))
         self._setup_combo = QComboBox()
         self._setup_combo.currentIndexChanged.connect(self._on_setup_selection_changed)
         primary_row.addWidget(self._setup_combo, stretch=1)
         setup_layout.addLayout(primary_row)
 
         compare_row = QHBoxLayout()
-        compare_row.addWidget(QLabel("Karşılaştırılacak session:"))
+        compare_row.addWidget(QLabel("Compare session:"))
         self._setup_compare_session_combo = QComboBox()
         self._setup_compare_session_combo.currentIndexChanged.connect(self._on_setup_compare_session_changed)
         compare_row.addWidget(self._setup_compare_session_combo, stretch=1)
@@ -286,17 +317,17 @@ class LapDetailWidget(QWidget):
         setup_layout.addLayout(compare_row)
 
         self._setup_table = QTableWidget(0, 3)
-        self._setup_table.setHorizontalHeaderLabels(["Alan", "Seçili Setup", "Karşılaştırma"])
+        self._setup_table.setHorizontalHeaderLabels(["Setting", "Selected Setup", "Comparison"])
         self._setup_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._setup_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         setup_layout.addWidget(self._setup_table)
 
-        self._setup_empty_label = QLabel("Bu session için setup verisi kaydedilmemiş.")
+        self._setup_empty_label = QLabel("No setup data recorded for this session.")
         self._setup_empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._setup_empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 13px;")
         self._setup_empty_label.hide()
 
-        self._setup_ai_button = QPushButton("AI Setup Analizi Oluştur")
+        self._setup_ai_button = QPushButton("Generate AI Setup Analysis")
         self._setup_ai_button.clicked.connect(self._on_generate_setup_feedback)
         setup_layout.addWidget(self._setup_ai_button)
 
@@ -305,7 +336,7 @@ class LapDetailWidget(QWidget):
         self._setup_feedback_text.setMaximumHeight(160)
         setup_layout.addWidget(self._setup_feedback_text)
 
-        self._setup_comparison_ai_button = QPushButton("AI Karşılaştırma Analizi Oluştur")
+        self._setup_comparison_ai_button = QPushButton("Generate AI Comparison Analysis")
         self._setup_comparison_ai_button.clicked.connect(self._on_generate_setup_comparison_feedback)
         setup_layout.addWidget(self._setup_comparison_ai_button)
 
@@ -315,13 +346,13 @@ class LapDetailWidget(QWidget):
         setup_layout.addWidget(self._setup_comparison_feedback_text)
         setup_layout.addWidget(self._setup_empty_label)
 
-        self._tabs.addTab(setup_scroll, "Setup Analizi")
+        self._tabs.addTab(setup_scroll, "Setup Analysis")
         self._update_ai_button_state()
 
 
     def _update_ai_button_state(self) -> None:
         enabled = self._coaching_engine is not None
-        tooltip = "" if enabled else "AI sağlayıcı henüz yapılandırılmadı (Ayarlar — Faz 6)"
+        tooltip = "" if enabled else "AI provider not configured yet (Settings)"
         for button in (
             self._single_ai_button, self._compare_ai_button,
             self._setup_ai_button, self._setup_comparison_ai_button,
@@ -339,12 +370,12 @@ class LapDetailWidget(QWidget):
         self._all_laps = all_laps
         self._track_id = track_id
 
-        validity = "Geçerli" if lap.is_valid else "Geçersiz"
-        self._header_label.setText(f"Tur {lap.lap_number} — {_format_time(lap.lap_time)} ({validity})")
+        validity = "Valid" if lap.is_valid else "Invalid"
+        self._header_label.setText(f"Lap {lap.lap_number} — {_format_time(lap.lap_time)} ({validity})")
 
         if lap.telemetry_file:
             df = read_telemetry(lap.telemetry_file)
-            html = build_single_lap_html(df, f"Tur {lap.lap_number}")
+            html = build_single_lap_html(df, f"Lap {lap.lap_number}")
             self._single_chart.render_html(html)
 
         self._single_feedback_text.clear()
@@ -356,7 +387,7 @@ class LapDetailWidget(QWidget):
         self._compare_combo.clear()
         for other in all_laps:
             if other.lap_number != lap.lap_number:
-                self._compare_combo.addItem(f"Tur {other.lap_number}", other.lap_number)
+                self._compare_combo.addItem(f"Lap {other.lap_number}", other.lap_number)
         self._compare_combo.blockSignals(False)
 
         if self._compare_combo.count() > 0:
@@ -375,8 +406,8 @@ class LapDetailWidget(QWidget):
         if other_lap is None or not other_lap.telemetry_file:
             return
 
-        label_a = f"Tur {self._current_lap.lap_number}"
-        label_b = f"Tur {other_lap.lap_number}"
+        label_a = f"Lap {self._current_lap.lap_number}"
+        label_b = f"Lap {other_lap.lap_number}"
 
         df_a = read_telemetry(self._current_lap.telemetry_file)
         df_b = read_telemetry(other_lap.telemetry_file)
@@ -408,8 +439,8 @@ class LapDetailWidget(QWidget):
             )
             self._single_feedback_text.setPlainText(feedback.feedback_text)
         except Exception as exc:
-            logger.error("AI feedback üretimi başarısız: %s", exc)
-            self._single_feedback_text.setPlainText(f"Hata: {exc}")
+            logger.error("AI feedback generation failed: %s", exc)
+            self._single_feedback_text.setPlainText(f"Error: {exc}")
 
     def _on_generate_comparison_feedback(self) -> None:
         if self._coaching_engine is None or self._current_lap is None:
@@ -422,8 +453,8 @@ class LapDetailWidget(QWidget):
             text = self._coaching_engine.generate_comparison_feedback(self._current_lap, other_lap)
             self._compare_feedback_text.setPlainText(text)
         except Exception as exc:
-            logger.error("AI karşılaştırma feedback üretimi başarısız: %s", exc)
-            self._compare_feedback_text.setPlainText(f"Hata: {exc}")
+            logger.error("AI comparison feedback generation failed: %s", exc)
+            self._compare_feedback_text.setPlainText(f"Error: {exc}")
             
     def _load_setup_tab(self, session_id: int) -> None:
         setups = self._car_setup_repo.get_by_session(session_id)
@@ -439,7 +470,7 @@ class LapDetailWidget(QWidget):
         for session in self._session_repo.get_all():
             label = f"{session.track.display_name} — {session.created_at.strftime('%d.%m.%Y %H:%M')}"
             if session.id == session_id:
-                label += " (bu session)"
+                label += " (this session)"
             self._setup_compare_session_combo.addItem(label, session.id)
         default_index = self._setup_compare_session_combo.findData(session_id)
         self._setup_compare_session_combo.setCurrentIndex(default_index if default_index >= 0 else 0)
@@ -517,8 +548,8 @@ class LapDetailWidget(QWidget):
             feedback = self._coaching_engine.generate_setup_feedback(setup, track)
             self._setup_feedback_text.setPlainText(feedback.feedback_text)
         except Exception as exc:
-            logger.error("AI setup feedback üretimi başarısız: %s", exc)
-            self._setup_feedback_text.setPlainText(f"Hata: {exc}")
+            logger.error("AI setup feedback generation failed: %s", exc)
+            self._setup_feedback_text.setPlainText(f"Error: {exc}")
 
     def _on_generate_setup_comparison_feedback(self) -> None:
         if self._coaching_engine is None:
@@ -534,8 +565,8 @@ class LapDetailWidget(QWidget):
             )
             self._setup_comparison_feedback_text.setPlainText(text)
         except Exception as exc:
-            logger.error("AI setup karşılaştırma feedback üretimi başarısız: %s", exc)
-            self._setup_comparison_feedback_text.setPlainText(f"Hata: {exc}")
+            logger.error("AI setup comparison feedback generation failed: %s", exc)
+            self._setup_comparison_feedback_text.setPlainText(f"Error: {exc}")
 
 
 class LapAnaliziPage(QWidget):
@@ -555,13 +586,14 @@ class LapAnaliziPage(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self._empty_label = QLabel("Henüz session yok")
+        self._empty_label = QLabel("No sessions yet")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._empty_label.setStyleSheet("font-size: 16px; color: #888;")
 
         self._stack = QStackedWidget()
         self._table_widget = LapTableWidget()
         self._table_widget.lap_selected.connect(self._on_lap_selected)
+        self._table_widget.refresh_requested.connect(self.refresh)
         self._detail_widget = LapDetailWidget(lap_repo, session_repo, coaching_engine, car_setup_repo)
         self._detail_widget.back_pressed.connect(self._show_table)
 
@@ -576,15 +608,38 @@ class LapAnaliziPage(QWidget):
         self._all_laps: list[Lap] = []
 
     def refresh(self) -> None:
-        """Her gösterildiğinde en son session'ı yükler (Canlı Session akışı için)."""
+        """Loads and displays the latest available session with laps."""
         sessions = self._session_repo.get_all()
         if not sessions:
+            self._empty_label.setText("No sessions recorded yet.\nStart a session in F1 25 to view telemetry analysis.")
             self._stack.setCurrentIndex(self._page_empty)
             return
-        self.load_session(sessions[0].id)
+
+        latest = sessions[0]
+        if latest.laps:
+            self.load_session(latest.id)
+            return
+
+        # If latest active session has no completed laps yet, check for prior session
+        earlier = next((s for s in sessions if s.laps), None)
+        if earlier:
+            self.load_session(earlier.id)
+            return
+
+        self._empty_label.setText(
+            f"Active Session: {latest.track.display_name} — {latest.session_type.display_name}\n\n"
+            "Lap 1 is currently in progress.\n"
+            "Complete a lap in F1 25 to view telemetry analysis and charts."
+        )
+        self._stack.setCurrentIndex(self._page_empty)
     
     def set_coaching_engine(self, coaching_engine: CoachingEngine | None) -> None:
         self._detail_widget.set_coaching_engine(coaching_engine)
+
+    def open_lap(self, session_id: int, lap_number: int) -> None:
+        """Loads the session and immediately displays the detailed graphs for the specified lap."""
+        self.load_session(session_id)
+        self._on_lap_selected(lap_number)
 
     def load_session(self, session_id: int) -> None:
         """Belirli bir session'ı yükler (Session Geçmişi'nden gelen seçim için)."""

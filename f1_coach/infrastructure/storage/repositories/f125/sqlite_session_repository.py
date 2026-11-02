@@ -28,25 +28,32 @@ class SQLiteSessionRepository:
         Sets ``session.id`` after a successful insert.
         """
         with get_session() as db:
-            if session.is_persisted:
+            existing = db.query(SessionORM).filter(SessionORM.session_uid == session.session_uid).first()
+            if existing is not None:
+                orm = existing
+                session.id = orm.id
+            elif session.is_persisted:
                 orm = db.get(SessionORM, session.id)
                 if orm is None:
                     raise ValueError(f"Session id={session.id} not found in database.")
-                orm.session_uid = session.session_uid
-                orm.track_id = session.track.value
-                orm.session_type_id = session.session_type.value
-                orm.created_at = session.created_at
-                orm.steering_assist = session.steering_assist
-                orm.braking_assist = session.braking_assist
-                orm.gearbox_assist = session.gearbox_assist
-                orm.ers_assist = session.ers_assist
-                orm.drs_assist = session.drs_assist
-                orm.dynamic_racing_line = session.dynamic_racing_line
-                orm.corner_cutting_stringency = session.corner_cutting_stringency
             else:
                 orm = session_to_orm(session)
                 db.add(orm)
-                db.flush()          # populate orm.id before commit
+
+            orm.session_uid = session.session_uid
+            orm.track_id = session.track.value
+            orm.session_type_id = session.session_type.value
+            orm.created_at = session.created_at
+            orm.steering_assist = session.steering_assist
+            orm.braking_assist = session.braking_assist
+            orm.gearbox_assist = session.gearbox_assist
+            orm.ers_assist = session.ers_assist
+            orm.drs_assist = session.drs_assist
+            orm.dynamic_racing_line = session.dynamic_racing_line
+            orm.corner_cutting_stringency = session.corner_cutting_stringency
+
+            db.flush()
+            if session.id == -1:
                 session.id = orm.id
 
         logger.debug("Session saved: uid=%s id=%d", session.session_uid, session.id)

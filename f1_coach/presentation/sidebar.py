@@ -253,7 +253,7 @@ class Sidebar(QWidget):
         layout.addSpacing(8)
 
         self._home_button = _NavIconButton(
-            _ICONS_DIR / "home-gray.svg", _ICONS_DIR / "home-color.svg", "Ana Sayfa", TEXT_PRIMARY
+            _ICONS_DIR / "home-gray.svg", _ICONS_DIR / "home-color.svg", "Home", TEXT_PRIMARY
         )
         self._home_button.clicked.connect(self.home_clicked.emit)
         layout.addWidget(self._home_button)
@@ -269,18 +269,14 @@ class Sidebar(QWidget):
         layout.addStretch(1)
 
         self._settings_button = _NavIconButton(
-            _ICONS_DIR / "settings-gray.svg", _ICONS_DIR / "settings-color.svg", "Ayarlar", TEXT_PRIMARY
+            _ICONS_DIR / "settings-gray.svg", _ICONS_DIR / "settings-color.svg", "Settings", TEXT_PRIMARY
         )
         self._settings_button.clicked.connect(self.settings_clicked.emit)
         layout.addWidget(self._settings_button)
 
     def set_navigation_locked(self, locked: bool) -> None:
-        """Session kaydı sürerken sidebar'ı tamamen gizler.
-
-        Devre dışı bırakıp gri göstermek yerine tamamen kaldırmak, "arka planda
-        sessizce kayıt yapılıyor, dikkatini dağıtma" hissini daha net veriyor.
-        """
-        self.setVisible(not locked)
+        """Keep sidebar visible and navigation accessible at all times."""
+        self.setVisible(True)
 
     def update_profile_badge(self, name: str, photo_path: str) -> None:
         """MainWindow tarafından açılışta ve her profil kaydından sonra çağrılır."""

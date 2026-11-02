@@ -11,7 +11,7 @@ olduğu için sorunu kökten çözüyor.
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 
-def confirm(parent, title: str, message: str, confirm_text: str = "Evet", cancel_text: str = "Hayır") -> bool:
+def confirm(parent, title: str, message: str, confirm_text: str = "Yes", cancel_text: str = "No") -> bool:
     """Basit bir Evet/Hayır onay penceresi gösterir, sonucu bool olarak döner."""
     dialog = QDialog(parent)
     dialog.setWindowTitle(title)
@@ -43,7 +43,7 @@ def confirm(parent, title: str, message: str, confirm_text: str = "Evet", cancel
 
     return dialog.exec() == QDialog.DialogCode.Accepted
 
-def notify(parent, title: str, message: str, button_text: str = "Tamam") -> None:
+def notify(parent, title: str, message: str, button_text: str = "OK") -> None:
     """QMessageBox.warning/information yerine kullanılan tek butonlu bilgi penceresi."""
     dialog = QDialog(parent)
     dialog.setWindowTitle(title)

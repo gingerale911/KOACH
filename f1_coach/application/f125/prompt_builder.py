@@ -36,29 +36,20 @@ class ReferenceContext:
 
 
 _SYSTEM_PREAMBLE = (
-    "Sen profesyonel bir F1 yarış mühendisisin. Sürücüye doğrudan, kendisine "
-    "hitap ederek konuşuyorsun — telsizden konuşan bir yarış mühendisi gibi. "
-    "Tur telemetrisine dayanarak her sektör için kısa ve uygulanabilir koçluk "
-    "geri bildirimi hazırlıyorsun.\n\n"
-    "KURALLAR:\n"
-    "1. Yalnızca sektör bazlı gözlemler yap; frenleme noktası, apex mesafesi gibi "
-    "metre cinsinden ölçülemeyen iddialardan kaçın.\n"
-    "2. Geri bildirimini ortalama hız, gaz/fren kullanım oranı, tam gaz yüzdesi gibi "
-    "toplu istatistiklere dayandır.\n"
-    "3. Sürücüye DOĞRUDAN hitap et — 'sürücü', 'pilot' gibi üçüncü şahıs ifadeler "
-    "yerine 'sen', 'senin', 'yaptın', 'kazandın' gibi ikinci tekil şahıs kullan. "
-    "Türkçe, net ve gerçekçi bir üslup kullan; zayıf yönleri pozitif bir dille "
-    "açıklayarak geliştirici öneriler sun.\n"
-    "4. Her sektör için en fazla 3-4 cümle yaz; cümleler öz, doğrudan ve eyleme "
-    "geçirilebilir olmalı.\n"
-    "5. Tur ve sektör sürelerinden bahsederken SADECE sana verilen formatı "
-    "(dakika:saniye.milisaniye, örn. 1:08.690) kullan; asla saniyeye çevirip "
-    "yeniden ifade etme.\n\n"
-    "İSTENEN ÇIKTI YAPISI:\n"
-    "- Giriş: senin mevcut performansını özetleyen 2-3 cümle.\n"
-    "- Sektör 1, 2 ve 3 için ayrı ayrı, kurallara uygun kısa koçluk notları.\n"
-    "- Kapanış: genel iyileştirme önerileri ve bir sonraki turda odaklanman "
-    "gereken temel nokta(lar), 2-3 cümle.\n"
+    "You are a professional Formula 1 race engineer. You speak directly to the driver "
+    "over team radio — concise, sharp, and actionable. Based on the lap telemetry, "
+    "provide clear sector-by-sector coaching feedback.\n\n"
+    "RULES:\n"
+    "1. Keep observations strictly sector-based; avoid unmeasurable claims in metres (e.g. exact braking distance or apex gap).\n"
+    "2. Ground feedback in aggregated statistics: average speed, full throttle %, braking duty cycle, and max speed.\n"
+    "3. Address the driver DIRECTLY in the second person ('you', 'your braking', 'you gained'). "
+    "Be realistic, constructive, and encouraging.\n"
+    "4. Maximum 3-4 sentences per sector; keep points concise and actionable.\n"
+    "5. Refer to lap and sector times ONLY in the provided format (e.g., 1:08.690); do not convert back to pure seconds.\n\n"
+    "OUTPUT STRUCTURE:\n"
+    "- Intro: 2-3 sentences summarizing the overall lap performance.\n"
+    "- Sector 1, 2, and 3: concise notes and actionable advice for each.\n"
+    "- Debrief: 2-3 sentences with key focus points for the next lap.\n"
 )
 
 def _format_time(seconds: float) -> str:
@@ -76,7 +67,7 @@ def _format_sector(sector: SectorSummary) -> str:
     )
 
 def _format_lap_block(label: str, summary: LapSummary) -> str:
-    lines = [f"{label} (Tur {summary.lap_number}, {_format_time(summary.lap_time)}):"]
+    lines = [f"{label} (Lap {summary.lap_number}, {_format_time(summary.lap_time)}):"]
     lines.extend(_format_sector(s) for s in summary.sectors)
     return "\n".join(lines)
 
@@ -169,11 +160,11 @@ def build_post_lap_prompt(
     Returns:
         A complete prompt string ready to send to an AIAdapter.
     """
-    parts = [_SYSTEM_PREAMBLE, "", _format_lap_block("MEVCUT TUR", current)]
+    parts = [_SYSTEM_PREAMBLE, "", _format_lap_block("CURRENT LAP", current)]
 
     if reference.level == ReferenceLevel.SESSION_BEST and reference.reference_summary:
         parts.append("")
-        parts.append(_format_lap_block("REFERANS (Bu session'daki en iyi tur)", reference.reference_summary))
+        parts.append(_format_lap_block("REFERENCE (Session Best Lap)", reference.reference_summary))
         parts.append("")
         parts.append(
             "Mevcut turu referans turla sektör sektör karşılaştır. Hangi sektörde "
@@ -181,7 +172,7 @@ def build_post_lap_prompt(
         )
     elif reference.level == ReferenceLevel.TRACK_BEST and reference.reference_summary:
         parts.append("")
-        parts.append(_format_lap_block("REFERANS (Bu pistteki tüm zamanların en iyisi)", reference.reference_summary))
+        parts.append(_format_lap_block("REFERENCE (All-Time Track Best)", reference.reference_summary))
         parts.append("")
         parts.append(
             "Bu, sürücünün bu session'daki ilk geçerli turu olduğu için pistteki "
@@ -210,9 +201,9 @@ def build_comparison_prompt(lap_a: LapSummary, lap_b: LapSummary) -> str:
     parts = [
         _SYSTEM_PREAMBLE,
         "",
-        _format_lap_block("TUR A", lap_a),
+        _format_lap_block("LAP A", lap_a),
         "",
-        _format_lap_block("TUR B", lap_b),
+        _format_lap_block("LAP B", lap_b),
         "",
         "İki turu sektör sektör karşılaştır. Hangi turun hangi sektörde daha "
         "iyi performans gösterdiğini ve olası nedenini belirt.",
@@ -224,18 +215,13 @@ def build_comparison_prompt(lap_a: LapSummary, lap_b: LapSummary) -> str:
 # ---------------------------------------------------------------------------
 
 _SETUP_SYSTEM_PREAMBLE = (
-    "Sen profesyonel bir F1 yarış mühendisisin. Sürücüye doğrudan hitap ederek "
-    "araç setup'ı hakkında yorum yapıyorsun.\n\n"
-    "KURALLAR:\n"
-    "1. Setup değerlerine dayanarak GENEL mühendislik trade-off'larını açıkla "
-    "(ör. 'yüksek ön kanat dönüşlerde tutuşu artırır ama düz hızda kayıp yaratabilir').\n"
-    "2. ASLA kesin zaman kazanç/kayıp iddiası yapma (ör. '0.3 saniye kazandırır') — "
-    "bu setup verisiyle doğrulanamaz bir iddiadır, çünkü elindeki veri iki setup'ın "
-    "aynı koşulda karşılaştırmalı sürülmüş telemetrisi değil.\n"
-    "3. Sürücüye DOĞRUDAN hitap et — 'sen', 'senin' gibi ikinci tekil şahıs kullan.\n"
-    "4. Setup'ın hangi sürüş tarzına (agresif/dengeli/stabil) uygun olduğunu "
-    "değerlendirebilirsin ama bunu da genel mühendislik bilgisine dayandır.\n"
-    "5. Türkçe, net ve öz yaz; toplam 4-6 cümleyi geçme.\n"
+    "You are a professional Formula 1 race engineer advising the driver on vehicle setup.\n\n"
+    "RULES:\n"
+    "1. Explain general engineering trade-offs based on the setup values (e.g. 'higher front wing improves turn-in bite but costs top speed').\n"
+    "2. NEVER make precise lap time gain/loss claims (e.g. 'saves 0.3 seconds').\n"
+    "3. Address the driver DIRECTLY in the second person ('you', 'your car balance').\n"
+    "4. Highlight what driving style the setup caters to (aggressive / neutral / planted).\n"
+    "5. Keep the debrief sharp and concise, between 4-6 sentences total.\n"
 )
 
 # UI'daki gösterim etiketlerinden bağımsız tutuluyor (application katmanı
@@ -267,7 +253,7 @@ _SETUP_PROMPT_FIELD_LABELS: list[tuple[str, str]] = [
 
 
 def _format_setup_block(label: str, setup: CarSetup) -> str:
-    lines = [f"{label} (Tur {setup.valid_from_lap}'den itibaren geçerli):"]
+    lines = [f"{label} (Valid from Lap {setup.valid_from_lap}):"]
     for field_name, field_label in _SETUP_PROMPT_FIELD_LABELS:
         lines.append(f"  {field_label}: {getattr(setup, field_name)}")
     return "\n".join(lines)
@@ -277,7 +263,7 @@ def build_setup_single_prompt(setup: CarSetup, track: TrackName) -> str:
     """Build the prompt for single-setup AI analysis (persisted feedback)."""
     parts = [
         _SETUP_SYSTEM_PREAMBLE, "",
-        f"Pist: {track.display_name}", "",
+        f"Track: {track.display_name}", "",
         _format_setup_block("SETUP", setup), "",
         "Bu setup'ı genel olarak değerlendir: hangi sürüş tarzına uygun, "
         "hangi trade-off'ları içeriyor?",
@@ -291,7 +277,7 @@ def build_setup_comparison_prompt(
     """Build the prompt for two-setup AI comparison (not persisted)."""
     parts = [
         _SETUP_SYSTEM_PREAMBLE, "",
-        f"Pist: {track.display_name}", "",
+        f"Track: {track.display_name}", "",
         _format_setup_block("SETUP A", setup_a), "",
         _format_setup_block("SETUP B", setup_b), "",
         "İki setup'ı karşılaştır: hangi farklar var, bu farklar hangi genel "

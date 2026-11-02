@@ -22,7 +22,7 @@ from f1_coach.presentation.background_worker import BackgroundWorker
 
 logger = get_logger(__name__)
 
-_FILE_FILTER = "Telemetri Dosyaları (*.json *.xlsx *.xls);;Tüm Dosyalar (*)"
+_FILE_FILTER = "Telemetry Files (*.json *.xlsx *.xls);;All Files (*)"
 
 
 class _StructuredImportDialog(QDialog):
@@ -35,7 +35,7 @@ class _StructuredImportDialog(QDialog):
         self._worker: BackgroundWorker | None = None
         self.new_session_id: int | None = None
 
-        self.setWindowTitle("Hazır Dosyadan Session Ekle")
+        self.setWindowTitle("Add Session from File")
         self.setMinimumWidth(420)
 
         layout = QVBoxLayout(self)
@@ -49,16 +49,16 @@ class _StructuredImportDialog(QDialog):
         ))
 
         file_row = QHBoxLayout()
-        self._select_button = QPushButton("Dosya Seç")
+        self._select_button = QPushButton("Select File")
         self._select_button.setObjectName("PrimaryButton")
         self._select_button.clicked.connect(self._on_select_file)
         file_row.addWidget(self._select_button)
 
-        self._file_label = QLabel("Henüz dosya seçilmedi")
+        self._file_label = QLabel("No file selected yet")
         file_row.addWidget(self._file_label, stretch=1)
         layout.addLayout(file_row)
 
-        layout.addWidget(QLabel("Session Adı:"))
+        layout.addWidget(QLabel("Session Name:"))
         self._name_input = QLineEdit()
         layout.addWidget(self._name_input)
 
@@ -68,11 +68,11 @@ class _StructuredImportDialog(QDialog):
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
-        self._cancel_button = QPushButton("Vazgeç")
+        self._cancel_button = QPushButton("Cancel")
         self._cancel_button.clicked.connect(self.reject)
         button_row.addWidget(self._cancel_button)
 
-        self._import_button = QPushButton("İçe Aktar")
+        self._import_button = QPushButton("Import")
         self._import_button.setObjectName("PrimaryButton")
         self._import_button.setEnabled(False)
         self._import_button.clicked.connect(self._on_import)
@@ -80,7 +80,7 @@ class _StructuredImportDialog(QDialog):
         layout.addLayout(button_row)
 
     def _on_select_file(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Telemetri Dosyası Seç", "", _FILE_FILTER)
+        path, _ = QFileDialog.getOpenFileName(self, "Select Telemetry File", "", _FILE_FILTER)
         if not path:
             return
         self._selected_file_path = path
@@ -94,7 +94,7 @@ class _StructuredImportDialog(QDialog):
             return
 
         self._status_label.setStyleSheet("color: inherit;")
-        self._status_label.setText("Dosya okunuyor...")
+        self._status_label.setText("Reading file...")
         self._import_button.setEnabled(False)
         self._select_button.setEnabled(False)
 
@@ -132,7 +132,7 @@ class _StructuredImportDialog(QDialog):
     def _on_worker_failed(self, exc: Exception) -> None:
         logger.error("Hazır dosya içe aktarımı başarısız: %s", exc)
         self._status_label.setStyleSheet("color: #E10600;")
-        self._status_label.setText(f"⚠ Hata: {exc}")
+        self._status_label.setText(f"⚠ Error: {exc}")
         self._import_button.setEnabled(True)
         self._select_button.setEnabled(True)
 

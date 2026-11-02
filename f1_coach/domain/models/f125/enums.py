@@ -31,14 +31,14 @@ class WeatherCondition(Enum):
     @property
     def display_name(self) -> str:
         _labels: dict[int, str] = {
-            0: "Açık",
-            1: "Parçalı Bulutlu",
-            2: "Kapalı",
-            3: "Hafif Yağmur",
-            4: "Sağanak Yağmur",
-            5: "Fırtına",
+            0: "Clear",
+            1: "Light Cloud",
+            2: "Overcast",
+            3: "Light Rain",
+            4: "Heavy Rain",
+            5: "Storm",
         }
-        return _labels.get(self.value, "Bilinmiyor")
+        return _labels.get(self.value, "Unknown")
 
     @classmethod
     def from_udp(cls, value: int) -> "WeatherCondition":
@@ -74,23 +74,23 @@ class SessionType(Enum):
 
     @property
     def display_name(self) -> str:
-        """Human-readable Turkish label for the UI."""
+        """Human-readable English label for the UI."""
         _labels: dict[int, str] = {
-            0: "Bilinmiyor",
-            1: "Antrenman 1",
-            2: "Antrenman 2",
-            3: "Antrenman 3",
-            4: "Kısa Antrenman",
-            5: "Sıralama 1",
-            6: "Sıralama 2",
-            7: "Sıralama 3",
-            8: "Kısa Sıralama",
-            9: "Tek Tur Sıralama",
-            10: "Sprint Sıralama",
-            15: "Yarış",
-            18: "Zaman Deneme",
+            0: "Unknown",
+            1: "Practice 1",
+            2: "Practice 2",
+            3: "Practice 3",
+            4: "Short Practice",
+            5: "Qualifying 1",
+            6: "Qualifying 2",
+            7: "Qualifying 3",
+            8: "Short Qualifying",
+            9: "One-Shot Qualifying",
+            10: "Sprint",
+            15: "Race",
+            18: "Time Trial",
         }
-        return _labels.get(self.value, "Bilinmiyor")
+        return _labels.get(self.value, "Unknown")
 
     @classmethod
     def from_udp(cls, value: int) -> "SessionType":
@@ -115,68 +115,68 @@ class TrackName(Enum):
     """
 
     UNKNOWN = -1
-    MELBOURNE = 0 #
-    SHANGHAI = 2 #
-    BAHRAIN = 3 #
-    BARCELONA = 4 #
-    MONACO = 5 #
-    MONTREAL = 6 #
-    SILVERSTONE = 7 #
-    BUDAPEST = 9 #
-    SPA = 10 #
-    MONZA = 11 #
-    SINGAPORE = 12 #
-    SUZUKA = 13 #
-    ABU_DHABI = 14 #
-    AUSTIN = 15 #
-    SAO_PAULO = 16 #
-    AUSTRIA = 17 #
-    MEXICO_CITY = 19 #
-    BAKU = 20 #
-    ZANDVOORT = 26 #
+    MELBOURNE = 0
+    SHANGHAI = 2
+    BAHRAIN = 3
+    BARCELONA = 4
+    MONACO = 5
+    MONTREAL = 6
+    SILVERSTONE = 7
+    BUDAPEST = 9
+    SPA = 10
+    MONZA = 11
+    SINGAPORE = 12
+    SUZUKA = 13
+    ABU_DHABI = 14
+    AUSTIN = 15
+    SAO_PAULO = 16
+    AUSTRIA = 17
+    MEXICO_CITY = 19
+    BAKU = 20
+    ZANDVOORT = 26
     IMOLA = 27
-    JEDDAH = 29 #
-    MIAMI = 30 #
-    LAS_VEGAS = 31 #
-    LUSAIL = 32 #
-    SILVERSTONE_REVERSE = 39 #
-    AUSTRIA_REVERSE = 40 #
-    ZANDVOORT_REVERSE = 41 #
+    JEDDAH = 29
+    MIAMI = 30
+    LAS_VEGAS = 31
+    LUSAIL = 32
+    SILVERSTONE_REVERSE = 39
+    AUSTRIA_REVERSE = 40
+    ZANDVOORT_REVERSE = 41
 
     @property
     def display_name(self) -> str:
         """Human-readable track name for the UI."""
         _labels: dict[int, str] = {
-            -1: "Bilinmiyor",
+            -1: "Unknown",
             0: "Melbourne",
-            2: "Şanghay",
-            3: "Bahreyn",
-            4: "Barselona",
-            5: "Monako",
+            2: "Shanghai",
+            3: "Bahrain",
+            4: "Barcelona",
+            5: "Monaco",
             6: "Montreal",
             7: "Silverstone",
-            9: "Budapeşte",
+            9: "Budapest",
             10: "Spa",
             11: "Monza",
-            12: "Singapur",
+            12: "Singapore",
             13: "Suzuka",
-            14: "Abu Dabi",
+            14: "Abu Dhabi",
             15: "Austin",
             16: "Sao Paulo",
-            17: "Avusturya",
-            19: "Meksika City",
-            20: "Bakü",
+            17: "Austria",
+            19: "Mexico City",
+            20: "Baku",
             26: "Zandvoort",
             27: "Imola",
-            29: "Cidde",
+            29: "Jeddah",
             30: "Miami",
             31: "Las Vegas",
             32: "Lusail",
-            39: "Silverstone (Ters)",
-            40: "Avusturya (Ters)",
-            41: "Zandvoort (Ters)",
+            39: "Silverstone (Reverse)",
+            40: "Austria (Reverse)",
+            41: "Zandvoort (Reverse)",
         }
-        return _labels.get(self.value, "Bilinmiyor")
+        return _labels.get(self.value, "Unknown")
 
     @classmethod
     def from_udp(cls, value: int) -> "TrackName":

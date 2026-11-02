@@ -13,14 +13,14 @@ def pick_profile(parent, profiles: list[MappingProfile]) -> MappingProfile | Non
         Seçilen MappingProfile, ya da vazgeçildiyse None.
     """
     dialog = QDialog(parent)
-    dialog.setWindowTitle("Profil Seç")
+    dialog.setWindowTitle("Select Profile")
     dialog.setMinimumWidth(360)
 
     layout = QVBoxLayout(dialog)
     layout.setContentsMargins(24, 20, 24, 20)
     layout.setSpacing(14)
 
-    layout.addWidget(QLabel("Yüklemek istediğin profili seç:"))
+    layout.addWidget(QLabel("Select the profile you want to load:"))
 
     list_widget = QListWidget()
     for profile in profiles:
@@ -33,11 +33,11 @@ def pick_profile(parent, profiles: list[MappingProfile]) -> MappingProfile | Non
 
     button_row = QHBoxLayout()
     button_row.addStretch(1)
-    cancel_button = QPushButton("Vazgeç")
+    cancel_button = QPushButton("Cancel")
     cancel_button.setObjectName("PrimaryButton")
     cancel_button.clicked.connect(dialog.reject)
     button_row.addWidget(cancel_button)
-    select_button = QPushButton("Yükle")
+    select_button = QPushButton("Load")
     select_button.setObjectName("PrimaryButton")
     select_button.setDefault(True)
     select_button.clicked.connect(dialog.accept)

@@ -34,17 +34,17 @@ class AcSecondaryPanel(QWidget):
         layout.setContentsMargins(16, 4, 16, 4)
         layout.setSpacing(8)
 
-        self._live_button = QPushButton("Canlı Bağlantı")
+        self._live_button = QPushButton("Live Connection")
         self._live_button.setObjectName("PrimaryButton")
         self._live_button.clicked.connect(self.live_clicked.emit)
         layout.addWidget(self._live_button)
 
-        self._lap_analysis_button = QPushButton("Lap Analizi")
+        self._lap_analysis_button = QPushButton("Lap Analysis")
         self._lap_analysis_button.setObjectName("PrimaryButton")
         self._lap_analysis_button.clicked.connect(self.lap_analysis_clicked.emit)
         layout.addWidget(self._lap_analysis_button)
 
-        self._session_history_button = QPushButton("Session Geçmişi")
+        self._session_history_button = QPushButton("Session History")
         self._session_history_button.setObjectName("PrimaryButton")
         self._session_history_button.clicked.connect(self.session_history_clicked.emit)
         layout.addWidget(self._session_history_button)

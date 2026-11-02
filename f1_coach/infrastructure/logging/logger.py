@@ -27,6 +27,13 @@ def _initialize() -> None:
     if _initialized:
         return
 
+    # Ensure stdout handles UTF-8 on Windows
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     _LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     root = logging.getLogger("f1_coach")
@@ -50,22 +57,10 @@ def _initialize() -> None:
     file_handler.setFormatter(_FORMATTER)
     root.addHandler(file_handler)
 
-    # Silence noisy third-party loggers
-    for noisy in ("urllib3", "httpx", "httpcore"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
-
     _initialized = True
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Return a child logger under the f1_coach namespace.
-
-    Args:
-        name: Typically ``__name__`` of the calling module.
-              If the name already starts with 'f1_coach', it is used as-is.
-              Otherwise it is prefixed, so external callers are also namespaced.
-    """
+    """Return a module-specific logger, ensuring global logging is initialised."""
     _initialize()
-    if not name.startswith("f1_coach"):
-        name = f"f1_coach.{name}"
     return logging.getLogger(name)

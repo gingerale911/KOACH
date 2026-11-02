@@ -48,16 +48,16 @@ from f1_coach.presentation.no_scroll_widgets import (
 logger = get_logger(__name__)
 
 _PROVIDERS = [
-    ("groq", "Groq (önerilen)"),
+    ("groq", "Groq (Recommended)"),
     ("anthropic", "Anthropic"),
     ("gemini", "Gemini"),
 ]
 _THEMES = [
-    ("dark", "Koyu"),
-    ("light", "Açık"),
-    ("graphite_mint", "Grafit & Nane"),
-    ("porcelain_blue", "Porselen & Mavi"),
-    ("violet_dragonfruit", "Menekşe & Ejder Meyvesi"),
+    ("dark", "Dark"),
+    ("light", "Light"),
+    ("graphite_mint", "Graphite & Mint"),
+    ("porcelain_blue", "Porcelain & Blue"),
+    ("violet_dragonfruit", "Violet & Dragonfruit"),
 ]
 
 def _make_section_card(dot_color: str, title: str) -> tuple[QFrame, QVBoxLayout]:
@@ -117,19 +117,19 @@ class AyarlarPage(QWidget):
         layout.setSpacing(16)
 
         # ================= AI Yapılandırması =================
-        ai_card, ai_content = _make_section_card(ACCENT_RED, "AI Yapılandırması")
+        ai_card, ai_content = _make_section_card(ACCENT_RED, "AI Configuration")
         layout.addWidget(ai_card)
 
         self._provider_combo = _NoScrollComboBox()
         for value, label in _PROVIDERS:
             self._provider_combo.addItem(label, value)
         self._provider_combo.currentIndexChanged.connect(self._on_provider_changed)
-        ai_content.addWidget(QLabel("AI Sağlayıcı"))
+        ai_content.addWidget(QLabel("AI Provider"))
         ai_content.addWidget(self._provider_combo)
         self._provider_combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         ai_content.addSpacing(10)
-        ai_content.addWidget(QLabel("API Anahtarı"))
+        ai_content.addWidget(QLabel("API Key"))
 
         key_row = QHBoxLayout()
         self._api_key_input = QLineEdit()
@@ -157,7 +157,7 @@ class AyarlarPage(QWidget):
         ai_content.addLayout(security_note_row)
 
         # ================= Telemetri Ayarları =================
-        telemetry_card, telemetry_content = _make_section_card(GREEN, "Telemetri Ayarları")
+        telemetry_card, telemetry_content = _make_section_card(GREEN, "Telemetry Settings")
         layout.addWidget(telemetry_card)
 
         telemetry_content.addWidget(QLabel("UDP Port"))
@@ -184,20 +184,20 @@ class AyarlarPage(QWidget):
         self._udp_port_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         port_note = QLabel(
-            "Yukarıdaki butonlar alanı hızlıca doldurur — istersen elle farklı bir port da girebilirsin."
+            "The buttons above quickly fill the field — you can also manually enter a custom port."
         )
         port_note.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; background: transparent;")
         telemetry_content.addWidget(port_note)
 
         # ================= Görünüm =================
-        appearance_card, appearance_content = _make_section_card(PURPLE, "Görünüm")
+        appearance_card, appearance_content = _make_section_card(PURPLE, "Appearance")
         layout.addWidget(appearance_card)
 
         self._section_cards = [ai_card, telemetry_card, appearance_card]
         ThemeManager.instance().theme_changed.connect(self._apply_card_theme)
         self._apply_card_theme()
 
-        appearance_content.addWidget(QLabel("Tema"))
+        appearance_content.addWidget(QLabel("Theme"))
         self._theme_combo = _NoScrollComboBox()
         for value, label in _THEMES:
             self._theme_combo.addItem(label, value)
@@ -205,7 +205,7 @@ class AyarlarPage(QWidget):
         self._theme_combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         appearance_content.addSpacing(10)
-        appearance_content.addWidget(QLabel("Arayüz Boyutu"))
+        appearance_content.addWidget(QLabel("Interface Scale"))
 
         scale_row = QHBoxLayout()
         self._scale_slider = QSlider(Qt.Orientation.Horizontal)
@@ -219,13 +219,13 @@ class AyarlarPage(QWidget):
         appearance_content.addLayout(scale_row)
 
         # ================= Kaydet =================
-        self._save_button = QPushButton("KAYDET")
+        self._save_button = QPushButton("SAVE")
         self._save_button.setObjectName("PrimaryButton")
         self._save_button.setFixedHeight(44)
         self._save_button.clicked.connect(self._on_save)
         layout.addWidget(self._save_button)
 
-        self._saved_banner = QLabel("✓ Ayarlar başarıyla kaydedildi")
+        self._saved_banner = QLabel("✓ Settings saved successfully")
         self._saved_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._saved_banner.setStyleSheet(
             f"background-color: {rgba(GREEN, 0.08)}; border: 1px solid {rgba(GREEN, 0.2)};"
@@ -310,8 +310,8 @@ class AyarlarPage(QWidget):
         profile = self._profile_repo.get_current()
         if profile is None:
             QMessageBox.warning(
-                self, "Profil eksik",
-                "Ayarları kaydetmeden önce lütfen Profil sayfasını tamamlayın.",
+                self, "Profile missing",
+                "Please complete the Profile page before saving settings.",
             )
             return
 
@@ -334,7 +334,7 @@ class AyarlarPage(QWidget):
         theme_manager = ThemeManager.instance()
         theme_manager.set_theme(profile.theme)
         theme_manager.set_scale(profile.ui_scale)
-        self._saved_banner.setText("✓ Ayarlar başarıyla kaydedildi")
+        self._saved_banner.setText("✓ Settings saved successfully")
 
         self._saved_banner.show()
         QTimer.singleShot(3500, self._saved_banner.hide)

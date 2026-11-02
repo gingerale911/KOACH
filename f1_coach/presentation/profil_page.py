@@ -175,7 +175,7 @@ class ProfilPage(QWidget):
 
         # --- Fotoğraf alanı ---
         photo_row = QHBoxLayout()
-        self._photo_label = QLabel("Fotoğraf yok")
+        self._photo_label = QLabel("No photo")
         self._photo_label.setFixedSize(96, 96)
         self._photo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._photo_label.setStyleSheet(
@@ -183,7 +183,7 @@ class ProfilPage(QWidget):
         )
         photo_row.addWidget(self._photo_label)
 
-        self._upload_button = QPushButton("Fotoğraf Yükle")
+        self._upload_button = QPushButton("Upload Photo")
         self._upload_button.setObjectName("PrimaryButton")
         self._upload_button.clicked.connect(self._on_upload_photo)
         photo_row.addWidget(self._upload_button)
@@ -194,8 +194,8 @@ class ProfilPage(QWidget):
         form = QFormLayout()
         self._name_input = QLineEdit()
         self._email_input = QLineEdit()
-        form.addRow("Ad Soyad:", self._name_input)
-        form.addRow("E-posta:", self._email_input)
+        form.addRow("Full Name:", self._name_input)
+        form.addRow("Email:", self._email_input)
         left_column.addLayout(form)
 
         # --- F1 Tercihleri (dropdown, manuel giriş yok) ---
@@ -209,17 +209,17 @@ class ProfilPage(QWidget):
         self._track_combo = QComboBox()
         self._track_combo.addItems(_TRACKS)
         self._track_combo.currentTextChanged.connect(self._update_driver_summary)
-        pref_form.addRow("Favori Takım:", self._team_combo)
-        pref_form.addRow("Favori Pilot:", self._driver_combo)
-        pref_form.addRow("Favori Pist:", self._track_combo)
+        pref_form.addRow("Favorite Team:", self._team_combo)
+        pref_form.addRow("Favorite Driver:", self._driver_combo)
+        pref_form.addRow("Favorite Track:", self._track_combo)
         left_column.addLayout(pref_form)
 
         # --- Aksiyonlar ---
         action_row = QHBoxLayout()
-        self._edit_button = QPushButton("Düzenle")
+        self._edit_button = QPushButton("Edit")
         self._edit_button.setObjectName("PrimaryButton")
         self._edit_button.clicked.connect(self._enable_editing)
-        self._save_button = QPushButton("Kaydet")
+        self._save_button = QPushButton("Save")
         self._save_button.clicked.connect(self._on_save)
 
         action_row.addWidget(self._edit_button)
@@ -237,7 +237,7 @@ class ProfilPage(QWidget):
         right_layout.setSpacing(6)
         root_layout.addWidget(right_card, stretch=2)
 
-        summary_header = QLabel("SÜRÜCÜ ÖZETİ")
+        summary_header = QLabel("DRIVER SUMMARY")
         summary_header.setStyleSheet(
             f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 600; background: transparent;"
         )
@@ -270,7 +270,7 @@ class ProfilPage(QWidget):
         self._stats_container.setSpacing(0)
         right_layout.addLayout(self._stats_container)
 
-        note = QLabel("İstatistikler ilk session tamamlandıktan sonra otomatik güncellenir.")
+        note = QLabel("Statistics will automatically update after the first session.")
         note.setWordWrap(True)
         note.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 11px; background: transparent; margin-top: 10px;")
         right_layout.addWidget(note)
@@ -322,12 +322,12 @@ class ProfilPage(QWidget):
     def _apply_photo(self, path: str) -> None:
         """Verilen yoldaki resmi dairesel olarak _photo_label'a uygular."""
         if not path:
-            self._photo_label.setText("Fotoğraf yok")
+            self._photo_label.setText("No photo")
             self._photo_label.setPixmap(QPixmap())
             return
         pixmap = _make_circular_pixmap(path, 96)
         if pixmap.isNull():
-            self._photo_label.setText("Fotoğraf yok")
+            self._photo_label.setText("No photo")
             self._photo_label.setPixmap(QPixmap())
         else:
             self._photo_label.setText("")
@@ -386,13 +386,13 @@ class ProfilPage(QWidget):
                 best_lap_text = _format_lap_time(min(lap.lap_time for lap in all_best_laps))
 
         self._stats_container.addWidget(
-            _make_stat_row("🏁", "Toplam Session", total_sessions, BLUE)
+            _make_stat_row("🏁", "Total Sessions", total_sessions, BLUE)
         )
         self._stats_container.addWidget(
-            _make_stat_row("⏱", "En İyi Tur", best_lap_text, GREEN)
+            _make_stat_row("⏱", "Best Lap", best_lap_text, GREEN)
         )
         self._stats_container.addWidget(
-            _make_stat_row("🏆", "Favori Pist", track, ORANGE)
+            _make_stat_row("🏆", "Favorite Track", track, ORANGE)
         )
 
     def _enable_editing(self) -> None:
@@ -400,7 +400,7 @@ class ProfilPage(QWidget):
 
     def _on_upload_photo(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Fotoğraf Seç", "", "Resimler (*.png *.jpg *.jpeg)"
+            self, "Select Photo", "", "Images (*.png *.jpg *.jpeg)"
         )
         if path:
             self._photo_path = path
