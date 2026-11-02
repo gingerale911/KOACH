@@ -47,11 +47,7 @@ from f1_coach.presentation.no_scroll_widgets import (
 
 logger = get_logger(__name__)
 
-_PROVIDERS = [
-    ("groq", "Groq (Recommended)"),
-    ("anthropic", "Anthropic"),
-    ("gemini", "Gemini"),
-]
+_AI_PROVIDER = "gemini"
 _THEMES = [
     ("dark", "Dark"),
     ("light", "Light"),
@@ -120,13 +116,7 @@ class AyarlarPage(QWidget):
         ai_card, ai_content = _make_section_card(ACCENT_RED, "AI Configuration")
         layout.addWidget(ai_card)
 
-        self._provider_combo = _NoScrollComboBox()
-        for value, label in _PROVIDERS:
-            self._provider_combo.addItem(label, value)
-        self._provider_combo.currentIndexChanged.connect(self._on_provider_changed)
-        ai_content.addWidget(QLabel("AI Provider"))
-        ai_content.addWidget(self._provider_combo)
-        self._provider_combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        ai_content.addWidget(QLabel("AI Model: Gemini 3.8 Flash"))
 
         ai_content.addSpacing(10)
         ai_content.addWidget(QLabel("API Key"))
@@ -253,9 +243,6 @@ class AyarlarPage(QWidget):
             self._udp_port_input.setValue(20777)
             return
 
-        index = self._provider_combo.findData(profile.ai_provider)
-        self._provider_combo.setCurrentIndex(index if index >= 0 else 0)
-
         self._udp_port_input.setValue(profile.udp_port)
 
         self._f125_preset_radio.blockSignals(True)
@@ -276,12 +263,9 @@ class AyarlarPage(QWidget):
         self._scale_slider.setValue(round(profile.ui_scale * 100))
         self._theme_combo.setCurrentIndex(theme_index if theme_index >= 0 else 0)
 
-        self._load_api_key_for_current_provider()
+        self._load_api_key()
         self._loaded_theme = profile.theme
 
-
-    def _on_provider_changed(self) -> None:
-        self._load_api_key_for_current_provider()
 
     def _on_scale_preview(self, value: int) -> None:
         self._scale_label.setText(f"{value}%")
@@ -294,9 +278,8 @@ class AyarlarPage(QWidget):
         if checked:
             self._udp_port_input.setValue(9996)
 
-    def _load_api_key_for_current_provider(self) -> None:
-        provider = self._provider_combo.currentData()
-        existing_key = get_api_key(provider)
+    def _load_api_key(self) -> None:
+        existing_key = get_api_key(_AI_PROVIDER)
         self._api_key_input.setText(existing_key)
 
     def _on_toggle_key_visibility(self) -> None:
@@ -315,21 +298,20 @@ class AyarlarPage(QWidget):
             )
             return
 
-        provider = self._provider_combo.currentData()
         api_key = self._api_key_input.text().strip()
 
-        profile.ai_provider = provider
+        profile.ai_provider = _AI_PROVIDER
         profile.udp_port = self._udp_port_input.value()
         profile.theme = self._theme_combo.currentData()
         profile.ui_scale = self._scale_slider.value() / 100.0
         self._profile_repo.save(profile)
 
         if api_key:
-            save_api_key(provider, api_key)
+            save_api_key(_AI_PROVIDER, api_key)
         else:
-            delete_api_key(provider)
+            delete_api_key(_AI_PROVIDER)
 
-        logger.info("Ayarlar kaydedildi: provider=%s udp_port=%d", provider, profile.udp_port)
+        logger.info("Ayarlar kaydedildi: provider=%s udp_port=%d", _AI_PROVIDER, profile.udp_port)
 
         theme_manager = ThemeManager.instance()
         theme_manager.set_theme(profile.theme)

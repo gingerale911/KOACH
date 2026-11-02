@@ -464,16 +464,16 @@ class MainWindow(QMainWindow):
             self._lap_analizi_page.set_coaching_engine(None)
             return
 
-        api_key = get_api_key(profile.ai_provider)
+        api_key = get_api_key("gemini")
         if not api_key:
             self._lap_analizi_page.set_coaching_engine(None)
             return
 
         try:
-            adapter = create_ai_adapter(profile.ai_provider, api_key)
+            adapter = create_ai_adapter(api_key)
             engine = CoachingEngine(self._lap_repo, self._session_repo, adapter, self._car_setup_repo)
             self._lap_analizi_page.set_coaching_engine(engine)
-            logger.info("CoachingEngine initialized: provider=%s", profile.ai_provider)
+            logger.info("CoachingEngine initialized: provider=gemini")
         except Exception as exc:
             logger.error("CoachingEngine failed to initialize: %s", exc)
             self._lap_analizi_page.set_coaching_engine(None)

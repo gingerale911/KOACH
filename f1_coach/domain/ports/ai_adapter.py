@@ -1,6 +1,6 @@
 """AIAdapter port — the boundary between the application and AI providers.
 
-Groq, Anthropic, and Gemini implementations all satisfy this Protocol.
+The Gemini implementation satisfies this Protocol.
 The application layer only ever calls ``generate_feedback``; provider-specific
 authentication, retry logic, and token counting are encapsulated in the adapters.
 """

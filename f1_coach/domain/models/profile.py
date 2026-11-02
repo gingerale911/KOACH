@@ -25,7 +25,7 @@ class Profile:
         favorite_track:  Selected from a fixed dropdown list in the UI.
         photo_path:      Absolute path to the user's uploaded photo file.
                          Empty string if no photo has been uploaded.
-        ai_provider:     "groq" | "anthropic" | "gemini", empty if unconfigured.
+        ai_provider:     "gemini", empty if unconfigured.
         udp_port:        UDP port to listen on for F1 25 telemetry.
         theme:           "dark" | "light".
         created_at:      When the profile was first created (onboarding).

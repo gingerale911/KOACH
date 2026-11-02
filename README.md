@@ -21,7 +21,7 @@ KOACH started as an F1 25 UDP telemetry coach and has grown into a two-module de
 - **Interactive lap analysis** — Plotly-powered speed, throttle/brake overlay, and gear charts, aligned by track position (0.0–1.0) for accurate lap comparison
 - **Track map overlay** — two laps' racing lines plotted over the circuit outline, speed-colored on hover
 - **Car setup tracking** — detects and logs setup changes across pit stops within a session, with AI-generated trade-off analysis
-- **AI coaching feedback** — sector-based, statistically-grounded post-lap analysis via Groq, Anthropic, or Gemini (your choice, your API key)
+- **AI coaching feedback** — sector-based, statistically-grounded post-lap analysis via Google Gemini (gemini-3.8-flash, your own API key)
 - **Reference lap hierarchy** — compares against session-best, then track-best, filtered by wet/dry conditions and excluding safety-car-affected laps
 - **Session history** — filterable by track, year, and weather, with one-click deletion
 
@@ -51,7 +51,7 @@ KOACH started as an F1 25 UDP telemetry coach and has grown into a two-module de
 | Structured storage | SQLite + SQLAlchemy ORM |
 | Raw telemetry storage | Apache Parquet (via `pyarrow`) |
 | CAN log parsing | `python-can` |
-| AI providers | Groq, Anthropic, Google Gemini |
+| AI model | Google Gemini (gemini-3.8-flash) |
 | Credential storage | `keyring` (OS-native secure storage) |
 | Architecture | Hexagonal (ports & adapters) |
 
@@ -83,7 +83,7 @@ f1_coach/
 │   │   ├── repositories/            # f125/ + fsae/ SQLite repository implementations
 │   │   ├── f125_parquet_writer.py
 │   │   └── fsae/parquet_writer.py
-│   ├── ai/                          # Groq/Anthropic/Gemini adapters (shared)
+│   ├── ai/                          # Gemini adapter (shared)
 │   └── security/                    # OS credential store integration (shared)
 └── presentation/                  # PyQt6 UI — one file per screen
     ├── f125/                        # Landing, Live Session, Lap Analysis, Session History
@@ -147,8 +147,6 @@ Go to **Settings**, choose a provider, and paste your API key:
 
 | Provider | Get a key |
 |---|---|
-| Groq (recommended — fast, generous free tier) | https://console.groq.com/keys |
-| Anthropic | https://console.anthropic.com/ |
 | Gemini | https://ai.google.dev/ |
 
 Your key is stored via your OS's credential manager — it never touches the SQLite database or any log file.
