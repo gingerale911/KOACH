@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from f1_coach.presentation import theme as theme_module
+from f1_coach.presentation.f125 import palette
 from f1_coach.presentation.theme_manager import ThemeManager
 
 CURRENT_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +45,7 @@ _FEATURE_CARDS = [
 def _make_feature_card(icon_filename: str, color: str, title: str, description: str) -> QFrame:
     card = QFrame()
     card.setStyleSheet(
-        f"QFrame {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+        f"QFrame {{ background-color: {palette.SURFACE}; border: 1px solid {palette.BORDER};"
         "  border-radius: 16px; padding: 18px; }"
     )
     layout = QVBoxLayout(card)
@@ -54,7 +54,7 @@ def _make_feature_card(icon_filename: str, color: str, title: str, description: 
     icon_box.setFixedSize(70,70)
     icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
     icon_box.setStyleSheet(
-        f"background-color: {theme_module.rgba(color, 0.14)}; border-radius: 12px; font-size: 19px;"
+        f"background-color: {palette.rgba(color, 0.14)}; border-radius: 12px; font-size: 19px;"
     )
     # İkon dosyasını yükle ve 32x32'ye boyutlandır
     icon_path = ICONS_DIR / icon_filename
@@ -78,7 +78,7 @@ def _make_feature_card(icon_filename: str, color: str, title: str, description: 
     desc_label = QLabel(description)
     desc_label.setWordWrap(True)
     desc_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-    desc_label.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px; background: transparent;")
+    desc_label.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 12px; background: transparent;")
     layout.addWidget(desc_label)
 
     return card
@@ -109,7 +109,7 @@ class F1_25LandingPage(QWidget):
         subtitle = QLabel("Record telemetry in real time and elevate your driving with AI-powered analysis.")
         subtitle.setWordWrap(True)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 14px;")
+        subtitle.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 14px;")
         layout.addWidget(subtitle)
 
         layout.addSpacing(12)
@@ -141,8 +141,8 @@ class F1_25LandingPage(QWidget):
                 item.widget().deleteLater()
 
         color_map = {
-            "GREEN": theme_module.GREEN, "BLUE": theme_module.BLUE,
-            "ORANGE": theme_module.ORANGE, "TEAL": _DASHBOARD_TEAL,
+            "GREEN": palette.GOOD, "BLUE": palette.ACCENT,
+            "ORANGE": palette.WARNING, "TEAL": _DASHBOARD_TEAL,
         }
         for index, (icon, color_key, card_title, desc) in enumerate(_FEATURE_CARDS):
             row, col = divmod(index, 2)

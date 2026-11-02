@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 
 from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.f125_udp.telemetry_receiver import TelemetryReceiver
-from f1_coach.presentation import theme as theme_module
+from f1_coach.presentation.f125 import palette
 from f1_coach.presentation.theme_manager import ThemeManager
 
 logger = get_logger(__name__)
@@ -32,7 +32,7 @@ def _make_stat_chip(icon: str, label: str, color: str) -> tuple[QFrame, QLabel]:
     """Live telemetry chip for speed, gear, throttle, RPM."""
     chip = QFrame()
     chip.setStyleSheet(
-        f"QFrame {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+        f"QFrame {{ background-color: {palette.SURFACE}; border: 1px solid {palette.BORDER};"
         "  border-radius: 10px; }"
     )
     layout = QHBoxLayout(chip)
@@ -42,11 +42,11 @@ def _make_stat_chip(icon: str, label: str, color: str) -> tuple[QFrame, QLabel]:
     icon_box = QLabel(icon)
     icon_box.setFixedSize(22, 22)
     icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    icon_box.setStyleSheet(f"background-color: {theme_module.rgba(color, 0.14)}; border-radius: 7px; font-size: 11px;")
+    icon_box.setStyleSheet(f"background-color: {palette.rgba(color, 0.14)}; border-radius: 7px; font-size: 11px;")
     layout.addWidget(icon_box)
 
     label_widget = QLabel(label)
-    label_widget.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; background: transparent;")
+    label_widget.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 11px; background: transparent;")
     layout.addWidget(label_widget)
 
     value_label = QLabel("—")
@@ -96,10 +96,10 @@ class CanliSessionPage(QWidget):
 
         top_row.addStretch(1)
 
-        self._speed_chip, self._speed_value = _make_stat_chip("🏎️", "Speed", theme_module.BLUE)
-        self._gear_chip, self._gear_value = _make_stat_chip("⚙️", "Gear", theme_module.PURPLE)
-        self._throttle_chip, self._throttle_value = _make_stat_chip("⚡", "Throttle", theme_module.GREEN)
-        self._rpm_chip, self._rpm_value = _make_stat_chip("📈", "RPM", theme_module.ORANGE)
+        self._speed_chip, self._speed_value = _make_stat_chip("🏎️", "Speed", palette.ACCENT)
+        self._gear_chip, self._gear_value = _make_stat_chip("⚙️", "Gear", palette.GEAR_TRACE)
+        self._throttle_chip, self._throttle_value = _make_stat_chip("⚡", "Throttle", palette.GOOD)
+        self._rpm_chip, self._rpm_value = _make_stat_chip("📈", "RPM", palette.WARNING)
 
         for chip in (self._speed_chip, self._gear_chip, self._throttle_chip, self._rpm_chip):
             top_row.addWidget(chip)
@@ -119,7 +119,7 @@ class CanliSessionPage(QWidget):
         laps_header.addWidget(self._laps_title)
 
         self._laps_hint = QLabel("(click any lap to open telemetry analysis)")
-        self._laps_hint.setStyleSheet(f"font-size: 12px; color: {theme_module.TEXT_SECONDARY};")
+        self._laps_hint.setStyleSheet(f"font-size: 12px; color: {palette.TEXT_SECONDARY};")
         laps_header.addWidget(self._laps_hint)
         laps_header.addStretch(1)
         layout.addLayout(laps_header)
@@ -128,11 +128,11 @@ class CanliSessionPage(QWidget):
         self._lap_list = QListWidget()
         self._lap_list.setCursor(Qt.CursorShape.PointingHandCursor)
         self._lap_list.setStyleSheet(
-            f"QListWidget {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+            f"QListWidget {{ background-color: {palette.SURFACE}; border: 1px solid {palette.BORDER};"
             f"  border-radius: 10px; padding: 6px; }}"
             f"QListWidget::item {{ height: 38px; padding-left: 12px; border-radius: 6px; margin-bottom: 2px; font-size: 13px; }}"
-            f"QListWidget::item:hover {{ background-color: {theme_module.rgba(theme_module.ACCENT_RED, 0.15)}; }}"
-            f"QListWidget::item:selected {{ background-color: {theme_module.rgba(theme_module.ACCENT_RED, 0.25)}; color: #FFFFFF; }}"
+            f"QListWidget::item:hover {{ background-color: {palette.rgba(palette.DANGER, 0.15)}; }}"
+            f"QListWidget::item:selected {{ background-color: {palette.rgba(palette.DANGER, 0.25)}; color: #FFFFFF; }}"
         )
         self._lap_list.itemClicked.connect(self._on_item_clicked)
         self._lap_list.itemDoubleClicked.connect(self._on_item_clicked)
@@ -144,12 +144,12 @@ class CanliSessionPage(QWidget):
         self._end_button.setFixedHeight(40)
         self._end_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._end_button.setStyleSheet(
-            f"QPushButton {{ background-color: {theme_module.rgba(theme_module.ACCENT_RED, 0.1)};"
-            f"  border: 1px solid {theme_module.rgba(theme_module.ACCENT_RED, 0.25)}; border-radius: 10px;"
-            f"  color: {theme_module.ACCENT_RED}; font-weight: 600; }}"
-            f"QPushButton:hover {{ background-color: {theme_module.rgba(theme_module.ACCENT_RED, 0.16)}; }}"
-            f"QPushButton:disabled {{ color: {theme_module.TEXT_MUTED}; background-color: transparent;"
-            f"  border-color: {theme_module.BORDER}; }}"
+            f"QPushButton {{ background-color: {palette.rgba(palette.DANGER, 0.1)};"
+            f"  border: 1px solid {palette.rgba(palette.DANGER, 0.25)}; border-radius: 10px;"
+            f"  color: {palette.DANGER}; font-weight: 600; }}"
+            f"QPushButton:hover {{ background-color: {palette.rgba(palette.DANGER, 0.16)}; }}"
+            f"QPushButton:disabled {{ color: {palette.TEXT_MUTED}; background-color: transparent;"
+            f"  border-color: {palette.BORDER}; }}"
         )
         self._end_button.clicked.connect(self._on_end_session)
         layout.addWidget(self._end_button)
@@ -230,30 +230,30 @@ class CanliSessionPage(QWidget):
 
     def _set_status_waiting(self) -> None:
         self._status_pill.setStyleSheet(
-            f"QFrame {{ background-color: {theme_module.rgba(theme_module.TEXT_SECONDARY, 0.08)};"
-            f"  border: 1px solid {theme_module.BORDER}; border-radius: 100px; }}"
+            f"QFrame {{ background-color: {palette.rgba(palette.TEXT_SECONDARY, 0.08)};"
+            f"  border: 1px solid {palette.BORDER}; border-radius: 100px; }}"
         )
-        self._status_dot.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 10px; background: transparent;")
+        self._status_dot.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 10px; background: transparent;")
         self._status_text.setText("Waiting for session")
-        self._status_text.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 12px; font-weight: 600; background: transparent;")
+        self._status_text.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 12px; font-weight: 600; background: transparent;")
 
     def _set_status_recording(self) -> None:
         self._status_pill.setStyleSheet(
-            f"QFrame {{ background-color: {theme_module.rgba(theme_module.GREEN, 0.10)};"
-            f"  border: 1px solid {theme_module.rgba(theme_module.GREEN, 0.25)}; border-radius: 100px; }}"
+            f"QFrame {{ background-color: {palette.rgba(palette.GOOD, 0.10)};"
+            f"  border: 1px solid {palette.rgba(palette.GOOD, 0.25)}; border-radius: 100px; }}"
         )
-        self._status_dot.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 10px; background: transparent;")
+        self._status_dot.setStyleSheet(f"color: {palette.GOOD}; font-size: 10px; background: transparent;")
         self._status_text.setText("Telemetry recording")
-        self._status_text.setStyleSheet(f"color: {theme_module.GREEN}; font-size: 12px; font-weight: 600; background: transparent;")
+        self._status_text.setStyleSheet(f"color: {palette.GOOD}; font-size: 12px; font-weight: 600; background: transparent;")
 
     def _set_status_disconnected(self) -> None:
         self._status_pill.setStyleSheet(
-            f"QFrame {{ background-color: {theme_module.rgba(theme_module.ACCENT_RED, 0.10)};"
-            f"  border: 1px solid {theme_module.rgba(theme_module.ACCENT_RED, 0.25)}; border-radius: 100px; }}"
+            f"QFrame {{ background-color: {palette.rgba(palette.DANGER, 0.10)};"
+            f"  border: 1px solid {palette.rgba(palette.DANGER, 0.25)}; border-radius: 100px; }}"
         )
-        self._status_dot.setStyleSheet(f"color: {theme_module.ACCENT_RED}; font-size: 10px; background: transparent;")
+        self._status_dot.setStyleSheet(f"color: {palette.DANGER}; font-size: 10px; background: transparent;")
         self._status_text.setText("No telemetry received")
-        self._status_text.setStyleSheet(f"color: {theme_module.ACCENT_RED}; font-size: 12px; font-weight: 600; background: transparent;")
+        self._status_text.setStyleSheet(f"color: {palette.DANGER}; font-size: 12px; font-weight: 600; background: transparent;")
         logger.warning("Live Session: telemetry stream paused/idle.")
 
     def _on_end_session(self) -> None:

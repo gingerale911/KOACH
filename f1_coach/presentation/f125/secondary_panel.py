@@ -10,7 +10,7 @@ detailed telemetry charts, and past session logs while driving.
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
-from f1_coach.presentation import theme as theme_module
+from f1_coach.presentation.f125 import palette
 
 _PANEL_HEIGHT = 48
 
@@ -76,15 +76,15 @@ class SecondaryPanel(QWidget):
         for name, btn in buttons:
             if name == tab:
                 btn.setStyleSheet(
-                    f"QPushButton {{ background-color: {theme_module.ACCENT_RED}; color: #FFFFFF; font-weight: 700;"
-                    f"  border: 1px solid {theme_module.ACCENT_RED_DARK}; border-radius: 8px; padding: 6px 16px; font-size: 12px; }}"
-                    f"QPushButton:hover {{ background-color: {theme_module.ACCENT_RED_DARK}; }}"
+                    f"QPushButton {{ background-color: {palette.ACCENT}; color: {palette.ON_ACCENT}; font-weight: 700;"
+                    f"  border: 1px solid {palette.ACCENT}; border-radius: 8px; padding: 6px 16px; font-size: 12px; }}"
+                    f"QPushButton:hover {{ background-color: {palette.ACCENT_HOVER}; }}"
                 )
             else:
                 btn.setStyleSheet(
-                    f"QPushButton {{ background-color: {theme_module.SURFACE}; color: {theme_module.TEXT_SECONDARY}; font-weight: 600;"
-                    f"  border: 1px solid {theme_module.BORDER}; border-radius: 8px; padding: 6px 16px; font-size: 12px; }}"
-                    f"QPushButton:hover {{ background-color: {theme_module.rgba(theme_module.TEXT_PRIMARY, 0.08)}; color: {theme_module.TEXT_PRIMARY}; border-color: {theme_module.BORDER_HOVER}; }}"
+                    f"QPushButton {{ background-color: {palette.SURFACE}; color: {palette.TEXT_SECONDARY}; font-weight: 600;"
+                    f"  border: 1px solid {palette.BORDER}; border-radius: 8px; padding: 6px 16px; font-size: 12px; }}"
+                    f"QPushButton:hover {{ background-color: {palette.rgba(palette.TEXT_PRIMARY, 0.08)}; color: {palette.TEXT_PRIMARY}; border-color: {palette.ACCENT}; }}"
                 )
 
     def open_panel(self) -> None:
