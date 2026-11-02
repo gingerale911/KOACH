@@ -23,6 +23,7 @@ from f1_coach.domain.ports.f125.lap_repository import LapRepository
 from f1_coach.domain.ports.f125.session_repository import SessionRepository
 from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.f125_udp.parsers.packet_parsers import (
+    parse_car_damage,
     parse_car_setup,
     parse_car_status,
     parse_car_telemetry,
@@ -181,6 +182,8 @@ class TelemetryReceiver:
             self._handle_telemetry(data, header)
         elif packet_id == 7:
             self._handle_car_status(data, header)
+        elif packet_id == 10:
+            self._handle_car_damage(data)
         # All other packet IDs are silently ignored
 
     # ------------------------------------------------------------------
@@ -295,6 +298,24 @@ class TelemetryReceiver:
             int(car.m_brakesTemperature[2]),
             int(car.m_brakesTemperature[3]),
         )
+        self._snapshot.last_packet_timestamp = time.monotonic()
+
+    def _handle_car_damage(self, data: bytes) -> None:
+        packet = parse_car_damage(data)
+        if packet is None:
+            return
+        car = packet.m_carDamageData[self._player_index]
+        self._snapshot.tyres_wear_pct = tuple(float(v) for v in car.m_tyresWear)
+        self._snapshot.tyres_damage_pct = tuple(int(v) for v in car.m_tyresDamage)
+        self._snapshot.front_left_wing_damage = int(car.m_frontLeftWingDamage)
+        self._snapshot.front_right_wing_damage = int(car.m_frontRightWingDamage)
+        self._snapshot.rear_wing_damage = int(car.m_rearWingDamage)
+        self._snapshot.floor_damage = int(car.m_floorDamage)
+        self._snapshot.diffuser_damage = int(car.m_diffuserDamage)
+        self._snapshot.sidepod_damage = int(car.m_sidepodDamage)
+        self._snapshot.gearbox_damage = int(car.m_gearBoxDamage)
+        self._snapshot.engine_damage = int(car.m_engineDamage)
+        self._snapshot.damage_received = True
         self._snapshot.last_packet_timestamp = time.monotonic()
 
     def _handle_car_status(self, data: bytes, header) -> None:

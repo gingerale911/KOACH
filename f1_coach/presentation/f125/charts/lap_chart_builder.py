@@ -9,8 +9,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from f1_coach.domain.models.f125.enums import TrackName
 
-_PURPLE = "#9B30FF"   # F1 resmi en iyi sektör/tur rengi (UI dokümanı §3.3)
-_COMPARISON_COLOR = "#00BFFF"
+from f1_coach.presentation.f125 import palette
+
+_PRIMARY_COLOR = palette.ACCENT
+_COMPARISON_COLOR = palette.COMPARISON
 
 def _strip_internal_scroll(html: str) -> str:
     """Plotly'nin ürettiği HTML sayfasının kendi içinde scrollbar göstermesini
@@ -31,6 +33,8 @@ def _build_figure(traces_per_row: list[list[go.Scatter]], row_titles: list[str])
         height=650, showlegend=True,
         margin=dict(l=40, r=20, t=40, b=40),
         template="plotly_dark",
+        paper_bgcolor=palette.SURFACE,
+        plot_bgcolor=palette.SURFACE,
     )
     return fig
 
@@ -39,12 +43,12 @@ def build_single_lap_html(telemetry_df: pd.DataFrame, lap_label: str) -> str:
     """Tek tur için hız / gaz-fren / vites grafiklerini içeren HTML üretir."""
     x = telemetry_df["track_position"]
 
-    speed_trace = [go.Scatter(x=x, y=telemetry_df["speed"], name=f"{lap_label} — Hız", line=dict(color=_PURPLE))]
+    speed_trace = [go.Scatter(x=x, y=telemetry_df["speed"], name=f"{lap_label} — Hız", line=dict(color=_PRIMARY_COLOR))]
     throttle_brake_traces = [
-        go.Scatter(x=x, y=telemetry_df["throttle"] * 100, name="Throttle %", line=dict(color="#2ecc71")),
-        go.Scatter(x=x, y=telemetry_df["brake"] * 100, name="Brake %", line=dict(color="#e74c3c")),
+        go.Scatter(x=x, y=telemetry_df["throttle"] * 100, name="Throttle %", line=dict(color=palette.GOOD)),
+        go.Scatter(x=x, y=telemetry_df["brake"] * 100, name="Brake %", line=dict(color=palette.DANGER)),
     ]
-    gear_trace = [go.Scatter(x=x, y=telemetry_df["gear"], name="Gear", line=dict(color="#f1c40f", shape="hv"))]
+    gear_trace = [go.Scatter(x=x, y=telemetry_df["gear"], name="Gear", line=dict(color=palette.GEAR_TRACE, shape="hv"))]
 
     fig = _build_figure(
         [speed_trace, throttle_brake_traces, gear_trace],
@@ -81,7 +85,7 @@ def _compute_delta_trace(
     return go.Scatter(
         x=grid, y=delta,
         name=f"{label_b} − {label_a}",
-        line=dict(color="#FFD700"),
+        line=dict(color=palette.GEAR_TRACE),
         fill="tozeroy",
     )
 
@@ -97,13 +101,13 @@ def build_comparison_html(
     x_a, x_b = df_a["track_position"], df_b["track_position"]
 
     speed_traces = [
-        go.Scatter(x=x_a, y=df_a["speed"], name=f"{label_a} — Hız", line=dict(color=_PURPLE)),
+        go.Scatter(x=x_a, y=df_a["speed"], name=f"{label_a} — Hız", line=dict(color=_PRIMARY_COLOR)),
         go.Scatter(x=x_b, y=df_b["speed"], name=f"{label_b} — Hız", line=dict(color=_COMPARISON_COLOR)),
     ]
     throttle_traces = [
         go.Scatter(
             x=x_a, y=df_a["throttle"] * 100, name=f"{label_a} — Gaz %",
-            line=dict(color=_PURPLE, dash="solid"),
+            line=dict(color=_PRIMARY_COLOR, dash="solid"),
         ),
         go.Scatter(
             x=x_b, y=df_b["throttle"] * 100, name=f"{label_b} — Gaz %",
@@ -113,7 +117,7 @@ def build_comparison_html(
     brake_traces = [
         go.Scatter(
             x=x_a, y=df_a["brake"] * 100, name=f"{label_a} — Fren %",
-            line=dict(color=_PURPLE, dash="dot"),
+            line=dict(color=_PRIMARY_COLOR, dash="dot"),
         ),
         go.Scatter(
             x=x_b, y=df_b["brake"] * 100, name=f"{label_b} — Fren %",
@@ -189,7 +193,7 @@ def build_track_map_html(
 
     fig.add_trace(go.Scatter(
         x=merged_a["pos_x"], y=merged_a["pos_z"],
-        mode="lines", name=label_a, line=dict(color=_PURPLE, width=3),
+        mode="lines", name=label_a, line=dict(color=_PRIMARY_COLOR, width=3),
         customdata=merged_a["speed"],
         hovertemplate=f"{label_a}<br>Hız: %{{customdata:.0f}} km/s<extra></extra>",
     ))
@@ -205,6 +209,8 @@ def build_track_map_html(
         height=550, showlegend=True,
         margin=dict(l=20, r=20, t=20, b=20),
         template="plotly_dark",
+        paper_bgcolor=palette.SURFACE,
+        plot_bgcolor=palette.SURFACE,
         xaxis_title=None, yaxis_title=None,
         xaxis_showticklabels=False, yaxis_showticklabels=False,
     )

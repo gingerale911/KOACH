@@ -12,6 +12,7 @@ import ctypes
 
 from f1_coach.infrastructure.logging.logger import get_logger
 from f1_coach.infrastructure.f125_udp.packets import (
+    PacketCarDamageData,
     PacketCarSetupData,      
     PacketCarStatusData,
     PacketCarTelemetryData,
@@ -72,6 +73,10 @@ def parse_car_telemetry(data: bytes) -> PacketCarTelemetryData | None:
 def parse_car_status(data: bytes) -> PacketCarStatusData | None:
     """Parse Packet ID 7 — Car Status."""
     return _parse(PacketCarStatusData, data)
+
+def parse_car_damage(data: bytes) -> PacketCarDamageData | None:
+    """Parse Packet ID 10 — Car Damage."""
+    return _parse(PacketCarDamageData, data)
 
 def parse_car_setup(data: bytes) -> PacketCarSetupData | None:
     """Parse Packet ID 5 — Car Setups."""

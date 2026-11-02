@@ -27,6 +27,7 @@ dependencies = [
 
 [tool.setuptools.package-data]
 "f1_coach.presentation" = ["assets/*.png"]
+"f1_coach.presentation.f125.dashboard" = ["track_data/*.json"]
 
 [project.optional-dependencies]
 dev = [

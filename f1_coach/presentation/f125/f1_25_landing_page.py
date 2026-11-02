@@ -26,6 +26,9 @@ from f1_coach.presentation.theme_manager import ThemeManager
 
 CURRENT_DIR = Path(__file__).resolve().parent.parent
 ICONS_DIR = CURRENT_DIR / "assets" / "icons"
+_DASHBOARD_TEAL = "#00D2BE"
+_TEAL_HOVER = "#00B3A4"
+_ON_TEAL = "#081012"
 
 _FEATURE_CARDS = [
     ("udp.svg", "GREEN", "Real-Time UDP Telemetry Capture",
@@ -34,7 +37,7 @@ _FEATURE_CARDS = [
      "Visualize lap differences. See where you gained or lost time — second by second."),
     ("compare.svg", "ORANGE", "Brake / Throttle Overlay Analysis",
      "Compare braking points and throttle application profiles with superimposed charts."),
-    ("feedback.svg", "PURPLE", "Post-Session AI Coaching Feedback",
+    ("feedback.svg", "TEAL", "Post-Session AI Coaching Feedback",
      "Analyze your driving with AI. Receive personalized coaching feedback and lap improvement suggestions."),
 ]
 
@@ -139,7 +142,7 @@ class F1_25LandingPage(QWidget):
 
         color_map = {
             "GREEN": theme_module.GREEN, "BLUE": theme_module.BLUE,
-            "ORANGE": theme_module.ORANGE, "PURPLE": theme_module.PURPLE,
+            "ORANGE": theme_module.ORANGE, "TEAL": _DASHBOARD_TEAL,
         }
         for index, (icon, color_key, card_title, desc) in enumerate(_FEATURE_CARDS):
             row, col = divmod(index, 2)
@@ -149,10 +152,9 @@ class F1_25LandingPage(QWidget):
 
         self._start_button.setStyleSheet(
             "QPushButton {"
-            "  background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
-            f"    stop:0 {theme_module.ACCENT_RED}, stop:1 {theme_module.ACCENT_RED_DARK});"
-            f"  color: {theme_module.BUTTON_TEXT}; border: none; border-radius: 24px;"
+            f"  background-color: {_DASHBOARD_TEAL};"
+            f"  color: {_ON_TEAL}; border: none; border-radius: 24px;"
             "  font-size: 15px; font-weight: 700;"
             "}"
-            f"QPushButton:hover {{ background-color: {theme_module.ACCENT_RED_DARK}; }}"
+            f"QPushButton:hover {{ background-color: {_TEAL_HOVER}; }}"
         )

@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from f1_coach.presentation import theme as theme_module
+from f1_coach.presentation.f125 import palette
 from f1_coach.presentation.theme_manager import ThemeManager
 from f1_coach.domain.models.f125.session import Session
 from f1_coach.domain.ports.f125.session_repository import SessionRepository
@@ -51,9 +51,9 @@ class SessionCard(QFrame):
         self._session_id = session.id
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setStyleSheet(
-            f"QFrame {{ background-color: {theme_module.SURFACE}; border: 1px solid {theme_module.BORDER};"
+            f"QFrame {{ background-color: {palette.SURFACE}; border: 1px solid {palette.BORDER};"
             "  border-radius: 10px; padding: 10px; }"
-            "QFrame:hover { border: 1px solid #9B30FF; }"
+            f"QFrame:hover {{ border: 1px solid {palette.ACCENT}; }}"
         )
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -76,7 +76,7 @@ class SessionCard(QFrame):
         if weather is not None:
             subtitle_text += f" · {weather.display_name}"
         subtitle = QLabel(subtitle_text)
-        subtitle.setStyleSheet(f"color: {theme_module.TEXT_SECONDARY}; font-size: 11px; background: transparent; border: none;")
+        subtitle.setStyleSheet(f"color: {palette.TEXT_SECONDARY}; font-size: 11px; background: transparent; border: none;")
         info_layout.addWidget(subtitle)
 
         layout.addLayout(info_layout, stretch=1)
@@ -145,7 +145,7 @@ class SessionGecmisiPage(QWidget):
 
         self._empty_label = QLabel("No saved sessions yet")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(f"font-size: 14px; color: {theme_module.TEXT_MUTED};")        
+        self._empty_label.setStyleSheet(f"font-size: 14px; color: {palette.TEXT_MUTED};")
         layout.addWidget(self._empty_label)
         self._empty_label.hide()
         ThemeManager.instance().theme_changed.connect(self.refresh)

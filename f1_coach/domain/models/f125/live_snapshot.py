@@ -52,6 +52,19 @@ class LiveTelemetrySnapshot:
     tyres_pressure_psi: tuple[float, float, float, float] = (22.5, 22.5, 24.0, 24.0)
     brakes_temperature: tuple[int, int, int, int] = (520, 510, 650, 620)
 
+    # Car damage (packet 10); damage_received is False until the first packet arrives
+    damage_received: bool = False
+    tyres_wear_pct: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
+    tyres_damage_pct: tuple[int, int, int, int] = (0, 0, 0, 0)
+    front_left_wing_damage: int = 0
+    front_right_wing_damage: int = 0
+    rear_wing_damage: int = 0
+    floor_damage: int = 0
+    diffuser_damage: int = 0
+    sidepod_damage: int = 0
+    gearbox_damage: int = 0
+    engine_damage: int = 0
+
     # Energy & Fuel
     fuel_in_tank: float = 52.4
     fuel_capacity: float = 110.0
